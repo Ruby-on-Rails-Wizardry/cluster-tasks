@@ -23,6 +23,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Shared `bundle cache` no longer prunes sibling apps' gems: set **`BUNDLE_NO_PRUNE=true`**
+  in warm / docker-app / cache-env / bundler-flags; `ensure-bundle-config` now **patches**
+  existing app `.bundle/config` for `BUNDLE_CLEAN=false` and `BUNDLE_NO_PRUNE=true`
+  (was seed-only, so old configs kept pruning → "Removing outdated .gem files from …")
+
 ### Security
 
 ## [0.1.1] - 2026-08-04

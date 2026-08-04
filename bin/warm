@@ -59,6 +59,8 @@ export BUNDLE_CACHE_PATH="${BUNDLE_CACHE_PATH:-/cache/rubygems}"
 export BUNDLE_USER_HOME="${BUNDLE_USER_HOME:-/cache/bundler}"
 # Never prune gems missing from the *current* Gemfile when sharing BUNDLE_PATH.
 export BUNDLE_CLEAN="${BUNDLE_CLEAN:-false}"
+# Never prune shared app-cache (.gem files) for sibling apps on `bundle cache`.
+export BUNDLE_NO_PRUNE="${BUNDLE_NO_PRUNE:-true}"
 export YARN_CACHE_FOLDER="${YARN_CACHE_FOLDER:-/cache/yarn-cache}"
 export YARN_OFFLINE_MIRROR="${YARN_OFFLINE_MIRROR:-/cache/yarn}"
 export PATH="/docker/bin:${HOME}/.local/bin:${MISE_DATA_DIR}/shims:${PATH}"
@@ -99,6 +101,8 @@ echo "== warm: CACHE_ROOT=${CACHE_ROOT}"
 echo "== warm: BUNDLE_PATH=${BUNDLE_PATH}"
 echo "== warm: BUNDLE_USER_HOME=${BUNDLE_USER_HOME}"
 echo "== warm: BUNDLE_CACHE_PATH=${BUNDLE_CACHE_PATH}"
+echo "== warm: BUNDLE_CLEAN=${BUNDLE_CLEAN}"
+echo "== warm: BUNDLE_NO_PRUNE=${BUNDLE_NO_PRUNE}"
 echo "== warm: YARN_OFFLINE_MIRROR=${YARN_OFFLINE_MIRROR}"
 echo "== warm: WARM_ISOLATE_BUNDLE=${WARM_ISOLATE_BUNDLE}"
 echo "== warm: WARM_SKIP_NEXT_LOCK=${WARM_SKIP_NEXT_LOCK}"
@@ -184,8 +188,9 @@ bundle_one() {
     fi
 
     if [[ "${did_install}" -eq 1 || "${WARM_FORCE_CACHE}" == "1" ]]; then
-      echo "   bundle cache --all-platforms → ${BUNDLE_CACHE_PATH}"
-      bundle cache --all-platforms 2>/dev/null || true
+      # BUNDLE_NO_PRUNE=true: do not delete other apps' gems from shared cache path.
+      echo "   bundle cache --all-platforms → ${BUNDLE_CACHE_PATH} (no-prune)"
+      BUNDLE_NO_PRUNE=true bundle cache --all-platforms 2>/dev/null || true
     else
       echo "   skip bundle cache (already satisfied; WARM_FORCE_CACHE=1 to refresh)"
     fi
@@ -266,6 +271,7 @@ docker run --rm \
   -e "CACHE_ROOT=/cache" \
   -e "BUNDLE_USER_HOME=/cache/bundler" \
   -e "BUNDLE_CLEAN=false" \
+  -e "BUNDLE_NO_PRUNE=true" \
   -e "WARM_ISOLATE_BUNDLE=${WARM_ISOLATE_BUNDLE:-0}" \
   -e "WARM_SKIP_NEXT_LOCK=${WARM_SKIP_NEXT_LOCK:-1}" \
   -e "WARM_FORCE_CACHE=${WARM_FORCE_CACHE:-0}" \

@@ -127,29 +127,36 @@ ensure_bundler_clean_false() {
     mkdir -p "${CONSUMER}/config"
     cat >"${flags}" <<'EOF'
 ---
-# Seeded by cluster-tasks wire. Multi-app shared BUNDLE_PATH must not prune siblings.
+# Seeded by cluster-tasks wire. Multi-app shared BUNDLE_PATH / BUNDLE_CACHE_PATH.
+# CLEAN=false  → do not prune installed gems for sibling apps
+# NO_PRUNE=true → do not prune shared cache on `bundle cache` (per-app lockfiles differ)
 BUNDLE_CACHE_ALL: "true"
 BUNDLE_CACHE_ALL_PLATFORMS: "true"
 BUNDLE_DISABLE_SHARED_GEMS: "true"
 BUNDLE_CLEAN: "false"
+BUNDLE_NO_PRUNE: "true"
 BUNDLE_JOBS: "4"
 BUNDLE_RETRY: "3"
 EOF
-    log "created ${flags} with BUNDLE_CLEAN=false"
+    log "created ${flags} with multi-app BUNDLE_CLEAN/NO_PRUNE"
     return 0
   fi
-  if grep -qE '^BUNDLE_CLEAN:' "${flags}"; then
-    if grep -qE '^BUNDLE_CLEAN:[[:space:]]*"?false"?' "${flags}"; then
-      log "BUNDLE_CLEAN already false in ${flags}"
+  force_flag() {
+    local key=$1 val=$2
+    if grep -qE "^${key}:" "${flags}"; then
+      if grep -qE "^${key}:[[:space:]]*\"?${val}\"?" "${flags}"; then
+        log "${key} already ${val} in ${flags}"
+      else
+        sed -i "s/^${key}:.*/${key}: \"${val}\"/" "${flags}"
+        log "set ${key}=${val} in ${flags}"
+      fi
     else
-      # force false for multi-app safety
-      sed -i 's/^BUNDLE_CLEAN:.*/BUNDLE_CLEAN: "false"/' "${flags}"
-      log "set BUNDLE_CLEAN=false in ${flags}"
+      printf '%s: "%s"\n' "${key}" "${val}" >>"${flags}"
+      log "appended ${key}=${val} to ${flags}"
     fi
-  else
-    printf '\nBUNDLE_CLEAN: "false"\n' >>"${flags}"
-    log "appended BUNDLE_CLEAN=false to ${flags}"
-  fi
+  }
+  force_flag BUNDLE_CLEAN false
+  force_flag BUNDLE_NO_PRUNE true
 }
 
 # Rewrite Taskfile.yml to: header + version + optional custom env/tasks + managed include.

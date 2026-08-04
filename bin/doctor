@@ -114,8 +114,14 @@ if [[ -f "${ROOT}/config/bundler-flags.yml" ]]; then
     printf 'WARN BUNDLE_CLEAN not false in config/bundler-flags.yml — sibling apps may lose gems on install\n'
     warn=1
   fi
+  if grep -qE '^BUNDLE_NO_PRUNE:[[:space:]]*"?true"?' "${ROOT}/config/bundler-flags.yml"; then
+    printf 'OK   BUNDLE_NO_PRUNE=true (shared cache safe)\n'
+  else
+    printf 'WARN BUNDLE_NO_PRUNE not true — bundle cache may print "Removing outdated gems" and drop sibling .gems\n'
+    warn=1
+  fi
 else
-  printf 'WARN missing config/bundler-flags.yml (wire will seed BUNDLE_CLEAN=false)\n'
+  printf 'WARN missing config/bundler-flags.yml (wire will seed multi-app flags)\n'
   warn=1
 fi
 
