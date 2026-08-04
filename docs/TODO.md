@@ -18,7 +18,7 @@ Living checklist. Check items off in PRs; keep [PLAN.md](PLAN.md) for design nar
 - [x] Remove `fred ron harry george` fallbacks in `lib.sh`
 - [x] Ensure `up:all` / multi-app compose args only use `bin/apps names`
 - [x] Decide: drop per-app Task targets vs generate them
-- [ ] Smoke: warm + one-app up + all-up on docker-mise-cluster (partial: doctor/apps/compose)
+- [x] Smoke: warm + one-app up + all-up on docker-mise-cluster (`cluster-tasks-phase1`)
 
 ## Phase 2 — Extract into this repo
 
@@ -29,20 +29,20 @@ Living checklist. Check items off in PRs; keep [PLAN.md](PLAN.md) for design nar
 - [x] Port/adapt generic `task/Taskfile.yml`
 - [x] `bin/wire` — idempotent sibling wiring (wrappers + materialize + BUNDLE_CLEAN + doctor)
 - [x] Doctor: sibling path, BUNDLE_CLEAN=false, materialized docker-app
-- [ ] Port/adapt mise defaults + document consumer `.mise.env`
-- [ ] Port SHARED-GEMS notes (or link to cluster doc until extract)
+- [ ] Port/adapt mise defaults + document consumer `.mise.env` (optional polish)
+- [x] Port SHARED-GEMS notes (link from cluster docs; pattern stays consumer-owned)
 - [x] Add `templates/apps.yml.example`
 - [x] README install/adopt section (**sibling** + `bin/wire`)
-- [ ] Tag **v0.1.0** when smoke passes with sibling consumer tree
+- [x] Tag **v0.1.0** after smoke with sibling consumer tree
 
 ## Phase 3 — docker-mise-cluster becomes consumer (siblings)
 
 - [x] Document required layout: `…/cluster-tasks` next to `…/docker-mise-cluster`
 - [x] Wire Taskfile `includes` → `../cluster-tasks/task/Taskfile.yml` (`flatten: true`)
-- [x] Thin `bin/*` wrappers → sibling; materialize in-container scripts (on branch `cluster-tasks-phase1`)
-- [ ] Update cluster AGENTS/ADOPT/SHARED-GEMS for sibling tooling (phase1 branch)
-- [ ] Full smoke: warm + up on phase1 branch
-- [ ] Keep **master** of docker-mise-cluster untouched until ready
+- [x] Thin `bin/*` wrappers → sibling; materialize in-container scripts (branch `cluster-tasks-phase1`)
+- [x] Update cluster AGENTS/ADOPT/SHARED-GEMS for sibling tooling (phase1 branch)
+- [x] Full smoke: warm + up:all on phase1 (nginx + apps 200; shared gem loads)
+- [ ] Keep **master** of docker-mise-cluster untouched until ready to merge
 - [ ] CHANGELOG + merge/release cluster when ready
 - [ ] Triple-push cluster (github, gitlab, ami)
 
@@ -57,8 +57,8 @@ Living checklist. Check items off in PRs; keep [PLAN.md](PLAN.md) for design nar
 ## Open questions
 
 - [x] Layout: **siblings** (`cluster-tasks` beside the cluster) — not nested submodule
-- [ ] Default env name: `CLUSTER_TASKS_ROOT` only, or also support `../cluster-tasks` auto-detect?
-- [ ] Should `bin/compose` live here if compose file is always consumer-owned? (yes — wrapper only)
+- [x] Default env: **`CLUSTER_TASKS_ROOT`** override, else auto-detect **`../cluster-tasks`** (and lib path when invoked from this tree)
+- [x] Should `bin/compose` live here if compose file is always consumer-owned? **Yes — wrapper only**
 - [ ] Generate nginx snippets later or never?
 - [ ] Relationship to ubuntu-sample host UX — share any scripts?
 
@@ -69,3 +69,5 @@ Living checklist. Check items off in PRs; keep [PLAN.md](PLAN.md) for design nar
 | 2026-08-04 | Repo scaffold + PLAN/TODO/CONTRACT docs |
 | 2026-08-04 | Phase 1 on docker-mise-cluster branch `cluster-tasks-phase1` |
 | 2026-08-04 | Locked layout: **siblings**, not nest cluster-tasks under cluster |
+| 2026-08-04 | `bin/wire` + ported bins; doctor BUNDLE_CLEAN / materialize checks |
+| 2026-08-04 | Smoke warm + up:all on phase1; fix docker-app Postgres wait; **v0.1.0** |

@@ -9,18 +9,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+### Changed
+
+### Fixed
+
+### Security
+
+## [0.1.0] - 2026-08-04
+
+First installable release. Clone as a **sibling** of a multi-app cluster and run `bin/wire`.
+
+### Added
+
 - Repository scaffold: PLAN, TODO, CONTRACT, README, AGENTS
-- Work plan to extract host tooling from docker-mise-cluster
 - Ported host `bin/*` + `task/Taskfile.yml` from docker-mise-cluster (apps.yml-driven)
-- **`bin/wire`** — idempotent wire into a sibling cluster (wrappers, materialize, BUNDLE_CLEAN, Task include, doctor)
+- **`bin/wire`** — idempotent wire into a sibling cluster (wrappers, materialize, `BUNDLE_CLEAN=false`, Task include, doctor)
 - Doctor checks: `CLUSTER_TASKS_ROOT`, `BUNDLE_CLEAN=false`, materialized `docker-app`
+- `templates/apps.yml.example`
+- Discovery: `CLUSTER_TASKS_ROOT` or auto-detect **`../cluster-tasks`** relative to the consumer
 
 ### Changed
 
 - Adoption model: **sibling clones** (`cluster-tasks` beside the cluster), not nested submodule
 
-
 ### Fixed
+
+- `bin/docker-app`: wait for Postgres with `pg_isready` against the maintenance DB (`postgres`), not ActiveRecord against the app database — fixes first boot on a fresh `pgdata` volume before `db:prepare`
 
 ### Security
 

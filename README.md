@@ -83,7 +83,8 @@ task up:all
 
 ## Status
 
-**v0.1.0-dev** — bins + `wire` + doctor available; pin a sibling checkout and test on a branch (do not treat as frozen API until tagged **v0.1.0**).
+**v0.1.0** — bins + `wire` + doctor; smoke-tested with sibling [docker-mise-cluster](https://github.com/Ruby-on-Rails-Wizardry/docker-mise-cluster) branch `cluster-tasks-phase1` (warm + up:all, nginx path routing, shared gem path override). Pin a sibling checkout at tag **v0.1.0** or track `master`.
+
 ## License
 
 Same org conventions as docker-mise-cluster (private template tooling; no license asserted yet).
