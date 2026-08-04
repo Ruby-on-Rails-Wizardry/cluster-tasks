@@ -1,0 +1,21 @@
+# Example consumer config — copy to your cluster as config/apps.yml and edit.
+# cluster-tasks reads this file; it does not invent apps.
+
+apps:
+  - name: app_one
+    path: app_one
+    port: 3001
+    url_root: /app_one
+    database: app_one_development
+    redis_db: 0
+  # - name: app_two
+  #   path: app_two
+  #   port: 3002
+  #   url_root: /app_two
+  #   database: app_two_development
+  #   redis_db: 1
+
+shared_gems: []
+# shared_gems:
+#   - name: my_shared_gem
+#     path: my_shared_gem

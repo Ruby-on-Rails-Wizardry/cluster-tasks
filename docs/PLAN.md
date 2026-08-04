@@ -1,0 +1,115 @@
+# Plan — extract cluster host tooling
+
+## Problem
+
+[docker-mise-cluster](https://github.com/Ruby-on-Rails-Wizardry/docker-mise-cluster) embeds useful host UX (`bin/*`, Task, mise) for multi-app Docker Rails **dev**. That tooling should work for **any** cluster-shaped tree (weasily, future `work/` clones), not only the demo apps.
+
+Today most scripts already read **`config/apps.yml`**, but:
+
+- Taskfile still has **per-app hard-coded** tasks (`up:fred`, …)
+- A few banners/fallbacks still name demo apps
+- Copy-pasting the whole cluster repo to get Task/bin is the wrong unit of reuse
+
+## Non-goals
+
+- Shipping a multi-app **compose** or nginx template (stays in the consumer)
+- Production Kamal / app Dockerfiles
+- Replacing ubuntu-mise
+- Bootboot dual-boot (shared gems use **`local.*`** / `BUNDLE_LOCAL__*`)
+
+## Boundaries
+
+```text
+┌─────────────────────────────────────────────────────────┐
+│  cluster-tasks (this repo)                              │
+│  bin/*, generic Taskfile, mise defaults, contracts      │
+└──────────────────────────▲──────────────────────────────┘
+                           │ submodule / include
+┌──────────────────────────┴──────────────────────────────┐
+│  Consumer cluster (work/, docker-mise-cluster, …)       │
+│  config/apps.yml, compose.yml, nginx/, apps, gems       │
+└─────────────────────────────────────────────────────────┘
+                           │ image contract
+┌──────────────────────────┴──────────────────────────────┐
+│  ubuntu-mise:dev  ·  /work mount  ·  volume cache→/cache│
+└─────────────────────────────────────────────────────────┘
+```
+
+## Design decisions (proposed)
+
+| Decision | Choice |
+|----------|--------|
+| Distribution | **Git submodule** (or subtree) under e.g. `.cluster-tasks/` |
+| Config SSOT for apps | Consumer **`config/apps.yml`** only |
+| Compose | Consumer-owned; tasks shell out to `bin/compose` against project root |
+| Task UX | Generic `warm`, `setup`, `compose`, `up`, `up:all`, `db:reset`; optional **generated** `up:<name>` later |
+| App list for `up:all` | `bin/apps names` |
+| Image | Default `ubuntu-mise:dev`; override via env / `.mise.env` |
+| Cache volume | Default name `cache` → `/cache` |
+| Shared gems | `shared_gems` in apps.yml + `bin/local-gem-env` |
+| Versioning | semver tags; consumers pin submodule SHA |
+
+## Extraction source
+
+Primary source of truth today: **docker-mise-cluster** `bin/` (~1.3k LOC) + `Taskfile.yml` + patterns from `docs/SHARED-GEMS.md`.
+
+Rough map:
+
+| Source path | Destination |
+|-------------|-------------|
+| `bin/lib.sh` | `bin/lib.sh` (env knobs, no demo fallbacks) |
+| `bin/apps` | `bin/apps` |
+| `bin/compose`, `warm`, `setup`, `docker-app`, … | same names under `bin/` |
+| `Taskfile.yml` | `task/Taskfile.yml` (generic) |
+| `mise.toml` / `.mise.env` patterns | `mise.toml` + docs for consumer merge |
+| SHARED-GEMS concepts | `docs/SHARED-GEMS.md` (ported/adapted) |
+
+## Phases
+
+### Phase 0 — Repo + docs (this commit)
+
+- Create repo, remotes, PLAN/TODO/CONTRACT, empty layout placeholders
+- No consumer adoption yet
+
+### Phase 1 — Make docker-mise-cluster fully generic (in place)
+
+- Remove hard-coded app names from `lib.sh`, `doctor`, `setup` messages
+- `up:all` / compose always driven by `bin/apps`
+- Optional: generate Task snippet from apps.yml  
+- **Prove** genericity without a second repo consumer
+
+### Phase 2 — Extract into cluster-tasks
+
+- Copy generalized `bin/*` + Taskfile into this repo
+- Add `ROOT` discovery: prefer `CLUSTER_ROOT` or walk to directory containing `config/apps.yml`
+- Wrapper convention for consumers documented
+- Tag **v0.1.0**
+
+### Phase 3 — Adopt in docker-mise-cluster
+
+- Add submodule `.cluster-tasks` (or `vendor/cluster-tasks`)
+- Thin `bin/*` wrappers or PATH; Taskfile `includes`
+- Delete duplicated scripts from cluster root
+- CI / manual smoke: `task warm`, `task up:all` (or single app)
+
+### Phase 4 — Second consumer / polish
+
+- Minimal fixture or weasily-style adopt notes
+- `bin/gen-tasks` if per-app Task shortcuts are still wanted
+- Release process + CHANGELOG discipline
+
+## Risks
+
+| Risk | Mitigation |
+|------|------------|
+| Compose still project-specific | Never generate full compose in v1 |
+| Broken ROOT when invoked from wrong cwd | Document “run from cluster root”; fail fast if no apps.yml |
+| Nested monorepo gitdir + local gems | Consumer must be standalone tree (see SHARED-GEMS) |
+| Divergent forks of bin/ | Submodule pin + one release train |
+
+## Success criteria (v0.1.0)
+
+- [ ] New empty-ish consumer with only apps.yml + compose can `task warm` using cluster-tasks bins
+- [ ] docker-mise-cluster uses cluster-tasks (no duplicate bin implementations)
+- [ ] No hard-coded demo app names in cluster-tasks
+- [ ] Docs: adopt, contract, remotes (github + gitlab + ami)
