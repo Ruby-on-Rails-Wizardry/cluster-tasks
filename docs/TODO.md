@@ -5,10 +5,10 @@ Living checklist. Check items off in PRs; keep [PLAN.md](PLAN.md) for design nar
 ## Phase 0 — Repository bootstrap
 
 - [x] Create local git repo + initial docs
-- [ ] Create GitHub repo `Ruby-on-Rails-Wizardry/cluster-tasks`
-- [ ] Create GitLab project `ruby-on-rails-wizardry/cluster-tasks`
-- [ ] Create ami bare `Ruby-on-Rails-Wizardry/cluster-tasks`
-- [ ] Push master to github + gitlab + ami
+- [x] Create GitHub repo `Ruby-on-Rails-Wizardry/cluster-tasks`
+- [x] Create GitLab project `ruby-on-rails-wizardry/cluster-tasks`
+- [x] Create ami bare `Ruby-on-Rails-Wizardry/cluster-tasks`
+- [x] Push master to github + gitlab + ami
 - [ ] Optional: GitHub description + topics
 
 ## Phase 1 — Genericize source (in docker-mise-cluster first)
