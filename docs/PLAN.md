@@ -91,20 +91,24 @@ Rough map:
 ### Phase 2 — Extract into cluster-tasks
 
 - Copy generalized `bin/*` + Taskfile into this repo
-- Add `ROOT` discovery: prefer `CLUSTER_ROOT` or walk to directory containing `config/apps.yml`
-- Wrapper convention for consumers documented
+- Add discovery:
+  - **Consumer root:** `CLUSTER_ROOT` or cwd / walk to `config/apps.yml`
+  - **Tooling root:** `CLUSTER_TASKS_ROOT` or sibling `../cluster-tasks`
+- Document thin wrappers / Task `includes` with `dir: .` and path to sibling Taskfile
 - Tag **v0.1.0**
 
-### Phase 3 — Adopt in docker-mise-cluster
+### Phase 3 — Adopt in docker-mise-cluster (sibling)
 
-- Add submodule `.cluster-tasks` (or `vendor/cluster-tasks`)
-- Thin `bin/*` wrappers or PATH; Taskfile `includes`
-- Delete duplicated scripts from cluster root
+- Assume layout: `…/cluster-tasks` next to `…/docker-mise-cluster`
+- Thin `bin/*` wrappers calling `$CLUSTER_TASKS_ROOT/bin/…` (default `../cluster-tasks`)
+- Taskfile includes sibling `../cluster-tasks/task/Taskfile.yml`
+- Delete duplicated script **bodies** from cluster (wrappers only)
 - CI / manual smoke: `task warm`, `task up:all` (or single app)
+- Document clone of **both** repos side by side
 
 ### Phase 4 — Second consumer / polish
 
-- Minimal fixture or weasily-style adopt notes
+- Minimal fixture or weasily-style adopt notes (sibling layout)
 - `bin/gen-tasks` if per-app Task shortcuts are still wanted
 - Release process + CHANGELOG discipline
 
@@ -114,12 +118,13 @@ Rough map:
 |------|------------|
 | Compose still project-specific | Never generate full compose in v1 |
 | Broken ROOT when invoked from wrong cwd | Document “run from cluster root”; fail fast if no apps.yml |
+| Missing sibling checkout | Fail with clear “clone cluster-tasks next to this project” |
 | Nested monorepo gitdir + local gems | Consumer must be standalone tree (see SHARED-GEMS) |
-| Divergent forks of bin/ | Submodule pin + one release train |
+| Divergent forks of bin/ | One release train; consumers pin sibling SHA/tag |
 
 ## Success criteria (v0.1.0)
 
-- [ ] New empty-ish consumer with only apps.yml + compose can `task warm` using cluster-tasks bins
-- [ ] docker-mise-cluster uses cluster-tasks (no duplicate bin implementations)
+- [ ] Sibling checkouts: `cluster-tasks` + consumer; consumer can `task warm` via wrappers
+- [ ] docker-mise-cluster uses sibling cluster-tasks (no duplicate bin implementations)
 - [ ] No hard-coded demo app names in cluster-tasks
-- [ ] Docs: adopt, contract, remotes (github + gitlab + ami)
+- [ ] Docs: adopt (sibling), contract, remotes (github + gitlab + ami)

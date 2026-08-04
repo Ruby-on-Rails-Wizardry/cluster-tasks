@@ -22,24 +22,28 @@ Living checklist. Check items off in PRs; keep [PLAN.md](PLAN.md) for design nar
 
 ## Phase 2 — Extract into this repo
 
-- [ ] Add directory layout: `bin/`, `task/`, `docs/`, `templates/`
-- [ ] Port `bin/lib.sh` with `CLUSTER_ROOT` (apps.yml) + `CLUSTER_TASKS_ROOT` (sibling tools)
-- [ ] Port `apps`, `compose`, `warm`, `setup`, `docker-app`, `doctor`, `db-reset`
-- [ ] Port `cache-*`, `cache-env`, `ensure-bundle-config`, `local-gem-env`, `mise-host-env.sh`
-- [ ] Port/adapt generic `task/Taskfile.yml`
+- [x] Add directory layout: `bin/`, `task/`, `docs/`, `templates/`
+- [x] Port `bin/lib.sh` with `CLUSTER_ROOT` (apps.yml) + `CLUSTER_TASKS_ROOT` (sibling tools)
+- [x] Port `apps`, `compose`, `warm`, `setup`, `docker-app`, `doctor`, `db-reset`
+- [x] Port `cache-*`, `cache-env`, `ensure-bundle-config`, `local-gem-env`, `mise-host-env.sh`
+- [x] Port/adapt generic `task/Taskfile.yml`
+- [x] `bin/wire` — idempotent sibling wiring (wrappers + materialize + BUNDLE_CLEAN + doctor)
+- [x] Doctor: sibling path, BUNDLE_CLEAN=false, materialized docker-app
 - [ ] Port/adapt mise defaults + document consumer `.mise.env`
 - [ ] Port SHARED-GEMS notes (or link to cluster doc until extract)
-- [ ] Add `templates/apps.yml.example`
-- [ ] README install/adopt section (**sibling** clone steps, not nested submodule)
+- [x] Add `templates/apps.yml.example`
+- [x] README install/adopt section (**sibling** + `bin/wire`)
 - [ ] Tag **v0.1.0** when smoke passes with sibling consumer tree
 
 ## Phase 3 — docker-mise-cluster becomes consumer (siblings)
 
-- [ ] Document required layout: `…/cluster-tasks` next to `…/docker-mise-cluster`
-- [ ] Wire Taskfile `includes` → `../cluster-tasks/task/Taskfile.yml` (or `$CLUSTER_TASKS_ROOT`)
-- [ ] Thin `bin/*` wrappers → sibling `bin/*` (or PATH); remove duplicated bodies
-- [ ] Update cluster AGENTS/ADOPT/SHARED-GEMS for sibling tooling
-- [ ] CHANGELOG + release cluster as needed
+- [x] Document required layout: `…/cluster-tasks` next to `…/docker-mise-cluster`
+- [x] Wire Taskfile `includes` → `../cluster-tasks/task/Taskfile.yml` (`flatten: true`)
+- [x] Thin `bin/*` wrappers → sibling; materialize in-container scripts (on branch `cluster-tasks-phase1`)
+- [ ] Update cluster AGENTS/ADOPT/SHARED-GEMS for sibling tooling (phase1 branch)
+- [ ] Full smoke: warm + up on phase1 branch
+- [ ] Keep **master** of docker-mise-cluster untouched until ready
+- [ ] CHANGELOG + merge/release cluster when ready
 - [ ] Triple-push cluster (github, gitlab, ami)
 
 ## Phase 4 — Polish

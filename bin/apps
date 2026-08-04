@@ -1,0 +1,89 @@
+#!/usr/bin/env bash
+# Read config/apps.yml and print app / shared-gem fields for other scripts.
+#
+# Usage:
+#   bin/apps names           # one name per line
+#   bin/apps paths           # one path per line
+#   bin/apps ports           # name\tpath\tport
+#   bin/apps url-roots       # /app1 /app2 … (space-separated, trailing slash normalized)
+#   bin/apps port-list       # 3001 3002 … (space-separated)
+#   bin/apps names-oneline   # app1 app2 … (for compose up)
+#   bin/apps shared-paths    # shared gem paths
+#   bin/apps yaml            # dump validated YAML summary
+
+set -euo pipefail
+
+# Prefer consumer cluster root when wired as sibling tooling.
+if [[ -n "${CLUSTER_ROOT:-}" && -f "${CLUSTER_ROOT}/config/apps.yml" ]]; then
+  ROOT="$(cd "${CLUSTER_ROOT}" && pwd)"
+elif [[ -f "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/config/apps.yml" ]]; then
+  ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+elif [[ -f "${PWD}/config/apps.yml" ]]; then
+  ROOT="${PWD}"
+else
+  ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+fi
+APPS_YML="${ROOT}/config/apps.yml"
+
+if [[ ! -f "${APPS_YML}" ]]; then
+  echo "error: missing ${APPS_YML}" >&2
+  exit 1
+fi
+
+cmd="${1:-names}"
+
+ruby -r yaml -e '
+apps_yml = ARGV[0]
+cmd = ARGV[1]
+cfg = YAML.load_file(apps_yml) || {}
+apps = cfg["apps"] || []
+gems = cfg["shared_gems"] || []
+
+case cmd
+when "names"
+  apps.each { |a| puts a.fetch("name") }
+when "paths"
+  apps.each { |a| puts a.fetch("path", a.fetch("name")) }
+when "names-oneline"
+  puts apps.map { |a| a.fetch("name") }.join(" ")
+when "port-list"
+  puts apps.map { |a| a.fetch("port") }.join(" ")
+when "url-roots"
+  roots = apps.map { |a| a["url_root"] }.compact.map { |r|
+    r = r.to_s
+    r = "/#{r}" unless r.start_with?("/")
+    r = "#{r}/" unless r.end_with?("/")
+    r
+  }
+  puts roots.join(" ")
+when "ports"
+  apps.each do |a|
+    name = a.fetch("name")
+    path = a.fetch("path", name)
+    port = a.fetch("port")
+    puts "#{name}\t#{path}\t#{port}"
+  end
+when "shared-paths"
+  gems.each { |g| puts g.is_a?(Hash) ? g.fetch("path", g.fetch("name")) : g }
+when "yaml"
+  puts "apps:"
+  apps.each do |a|
+    root = a["url_root"]
+    root_s = root ? " url_root=#{root}" : ""
+    db = a["database"]
+    db_s = db ? " database=#{db}" : ""
+    redis = a["redis_db"]
+    redis_s = !redis.nil? ? " redis_db=#{redis}" : ""
+    puts "  - #{a.fetch("name")} path=#{a.fetch("path", a.fetch("name"))} port=#{a.fetch("port")}#{root_s}#{db_s}#{redis_s}"
+  end
+  puts "shared_gems:"
+  if gems.empty?
+    puts "  (none)"
+  else
+    gems.each { |g| puts "  - #{g.is_a?(Hash) ? g.inspect : g}" }
+  end
+else
+  warn "unknown command: #{cmd}"
+  exit 1
+end
+' "${APPS_YML}" "${cmd}"

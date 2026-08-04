@@ -1,0 +1,114 @@
+#!/usr/bin/env bash
+# Start a Rails app inside the Ubuntu+mise dev container.
+# Prefer a prior `bin/warm` so gems/yarn/mise are already on the cache volume.
+
+set -euo pipefail
+
+PORT="${PORT:-3000}"
+APP_NAME="$(basename "$(pwd)")"
+
+CLUSTER_ROOT="${WORKSPACE:-/work}"
+if [[ ! -f "${CLUSTER_ROOT}/bin/docker-app" ]]; then
+  CLUSTER_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+fi
+
+# Image ENV already points BUNDLE_*/YARN_*/MISE_* at /cache. Dev: mise at runtime.
+if command -v mise >/dev/null 2>&1; then
+  mise trust "${CLUSTER_ROOT}" 2>/dev/null || true
+  mise trust . 2>/dev/null || true
+  eval "$(mise activate bash)" 2>/dev/null || true
+  echo "== ${APP_NAME}: mise install (cache MISE_DATA_DIR=${MISE_DATA_DIR:-/cache/mise})"
+  (cd "${CLUSTER_ROOT}" && mise install) || mise install
+  mise reshim 2>/dev/null || true
+  eval "$(mise activate bash)" 2>/dev/null || true
+fi
+
+# Plugins (bootboot, …) on the shared volume when image/runtime did not set them.
+export BUNDLE_USER_HOME="${BUNDLE_USER_HOME:-/cache/bundler}"
+export BUNDLE_CLEAN="${BUNDLE_CLEAN:-false}"
+mkdir -p "${BUNDLE_USER_HOME}" 2>/dev/null || true
+
+# Shared gems: Gemfile pins published version; local path for cluster checkout.
+if [[ -x "${CLUSTER_ROOT}/bin/local-gem-env" ]]; then
+  # shellcheck disable=SC1090
+  eval "$("${CLUSTER_ROOT}/bin/local-gem-env" /work)"
+fi
+
+echo "== ${APP_NAME}: BUNDLE_PATH=${BUNDLE_PATH:-/cache/bundle}"
+echo "== ${APP_NAME}: BUNDLE_CACHE_PATH=${BUNDLE_CACHE_PATH:-/cache/rubygems}"
+echo "== ${APP_NAME}: BUNDLE_USER_HOME=${BUNDLE_USER_HOME}"
+echo "== ${APP_NAME}: YARN_CACHE_FOLDER=${YARN_CACHE_FOLDER:-/cache/yarn-cache}"
+echo "== ${APP_NAME}: ruby $(ruby -v 2>/dev/null || echo missing)"
+echo "== ${APP_NAME}: yarn $(yarn --version 2>/dev/null || echo unknown)"
+
+if bundle check >/dev/null 2>&1; then
+  echo "== ${APP_NAME}: bundle already satisfied"
+else
+  echo "== ${APP_NAME}: bundle install (prefer local gem cache)"
+  if ! bundle install --local; then
+    echo "== ${APP_NAME}: local cache incomplete; fetching missing gems"
+    if ! bundle install; then
+      echo "== ${APP_NAME}: retry bundle install" >&2
+      sleep 1
+      bundle install
+    fi
+  fi
+fi
+
+if [[ -f "${CLUSTER_ROOT}/package.json" ]] && [[ -f "${CLUSTER_ROOT}/yarn.lock" ]]; then
+  if [[ ! -d "${CLUSTER_ROOT}/node_modules" ]]; then
+    echo "== ${APP_NAME}: yarn install"
+    (
+      cd "${CLUSTER_ROOT}"
+      yarn install --frozen-lockfile --prefer-offline 2>/dev/null || \
+        yarn install --frozen-lockfile || \
+        echo "== ${APP_NAME}: warning: yarn install failed; continuing" >&2
+    ) || true
+  else
+    echo "== ${APP_NAME}: node_modules present; skipping yarn install"
+  fi
+fi
+
+redact_url() {
+  sed -E 's#(://[^:/@]+:)[^@]+@#\1***@#' <<<"${1:-}"
+}
+
+if [[ -n "${DATABASE_URL:-}" ]]; then
+  echo "== ${APP_NAME}: DATABASE_URL=$(redact_url "${DATABASE_URL}")"
+elif [[ -n "${POSTGRES_HOST:-}" ]]; then
+  echo "== ${APP_NAME}: POSTGRES_HOST=${POSTGRES_HOST} POSTGRES_USER=${POSTGRES_USER:-}"
+else
+  echo "== ${APP_NAME}: warning: no DATABASE_URL or POSTGRES_HOST" >&2
+fi
+
+wait_for_postgres() {
+  local attempts="${1:-30}"
+  local i
+  for ((i = 1; i <= attempts; i++)); do
+    if bin/rails runner 'ActiveRecord::Base.connection.execute("SELECT 1")' >/dev/null 2>&1; then
+      return 0
+    fi
+    echo "== ${APP_NAME}: waiting for PostgreSQL (${i}/${attempts})…"
+    sleep 2
+  done
+  echo "error: ${APP_NAME}: could not connect to PostgreSQL" >&2
+  return 1
+}
+
+wait_for_postgres 30
+
+echo "== ${APP_NAME}: bin/rails db:prepare"
+bin/rails db:prepare
+
+bin/rails runner '
+  cfg = ActiveRecord::Base.connection_db_config
+  adapter = cfg.adapter.to_s
+  db = cfg.database.to_s
+  host = cfg.try(:host).to_s
+  puts "== '"${APP_NAME}"': ActiveRecord adapter=#{adapter} database=#{db} host=#{host}"
+  abort "error: expected postgresql adapter, got #{adapter.inspect}" unless adapter == "postgresql"
+  current = ActiveRecord::Base.connection.select_value("SELECT current_database()")
+  puts "== '"${APP_NAME}"': connected to PostgreSQL database=#{current}"
+'
+
+exec bin/rails server -b 0.0.0.0 -p "${PORT}"

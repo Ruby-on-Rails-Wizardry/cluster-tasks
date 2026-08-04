@@ -65,10 +65,25 @@ git remote add ami    git@ami:Ruby-on-Rails-Wizardry/cluster-tasks.git
 git push github && git push gitlab && git push ami
 ```
 
+## Wire into a cluster (sibling)
+
+```bash
+# Layout
+#   parent/cluster-tasks
+#   parent/docker-mise-cluster   # or work/
+
+cd ../docker-mise-cluster
+../cluster-tasks/bin/wire --yes
+task doctor
+task warm
+task up:all
+```
+
+`wire` is **idempotent**: re-run after updating cluster-tasks to refresh wrappers and materialized in-container scripts (`docker-app`, `apps`, `local-gem-env`).
+
 ## Status
 
-**v0.0.0 — planning only.** No installable `bin/` yet; do not submodule into production clusters until **v0.1.0**.
-
+**v0.1.0-dev** — bins + `wire` + doctor available; pin a sibling checkout and test on a branch (do not treat as frozen API until tagged **v0.1.0**).
 ## License
 
 Same org conventions as docker-mise-cluster (private template tooling; no license asserted yet).

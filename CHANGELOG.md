@@ -11,6 +11,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Repository scaffold: PLAN, TODO, CONTRACT, README, AGENTS
 - Work plan to extract host tooling from docker-mise-cluster
+- Ported host `bin/*` + `task/Taskfile.yml` from docker-mise-cluster (apps.yml-driven)
+- **`bin/wire`** — idempotent wire into a sibling cluster (wrappers, materialize, BUNDLE_CLEAN, Task include, doctor)
+- Doctor checks: `CLUSTER_TASKS_ROOT`, `BUNDLE_CLEAN=false`, materialized `docker-app`
 
 ### Changed
 

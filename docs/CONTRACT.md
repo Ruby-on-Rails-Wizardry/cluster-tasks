@@ -51,7 +51,8 @@ shared_gems: []
 | `IMAGE` | `ubuntu-mise:dev` | App/dev container image |
 | `CACHE_VOLUME` | `cache` | Docker volume name for `/cache` |
 | `UBUNTU_MISE_ROOT` | sibling `../ubuntu-mise` | Where to build base image |
-| `CLUSTER_ROOT` | auto | Override project root discovery |
+| `CLUSTER_ROOT` | auto | Override project (consumer) root discovery |
+| `CLUSTER_TASKS_ROOT` | sibling `../cluster-tasks` | Where this tooling lives |
 | `WARM_*` | see warm | Isolate bundle, skip next lock, force cache |
 
 ## Explicitly out of contract

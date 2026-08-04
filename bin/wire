@@ -1,0 +1,277 @@
+#!/usr/bin/env bash
+# Wire this cluster-tasks tree into a consumer cluster (sibling layout).
+#
+# Idempotent: safe to re-run. Creates/updates:
+#   - consumer bin/* wrappers (host tools) and materializes in-container scripts
+#   - Taskfile include block for sibling task/Taskfile.yml
+#   - config/bundler-flags.yml BUNDLE_CLEAN=false (multi-app shared path)
+#   - .cluster-tasks.env  (CLUSTER_TASKS_ROOT for humans/shells)
+#
+# Usage (from the consumer cluster root):
+#   ../cluster-tasks/bin/wire
+#   ../cluster-tasks/bin/wire --yes
+#   ../cluster-tasks/bin/wire /path/to/work
+#   ../cluster-tasks/bin/wire --check          # report only
+#
+# Env:
+#   CLUSTER_ROOT          consumer (default: cwd or first arg)
+#   CLUSTER_TASKS_ROOT    this repo (default: parent of this script)
+set -euo pipefail
+
+TOOLS_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+YES=0
+CHECK_ONLY=0
+CONSUMER=""
+
+for arg in "$@"; do
+  case "$arg" in
+    -y|--yes) YES=1 ;;
+    --check) CHECK_ONLY=1 ;;
+    -h|--help)
+      awk 'NR==1 { next } /^#/ { sub(/^# ?/, ""); print; next } { exit }' "$0"
+      exit 0
+      ;;
+    -*)
+      echo "unknown option: $arg" >&2
+      exit 1
+      ;;
+    *)
+      CONSUMER="$arg"
+      ;;
+  esac
+done
+
+log() { printf 'wire: %s\n' "$*" >&2; }
+die() { log "error: $*"; exit 1; }
+
+if [[ -z "${CONSUMER}" ]]; then
+  CONSUMER="${CLUSTER_ROOT:-$PWD}"
+fi
+CONSUMER="$(cd "${CONSUMER}" && pwd)"
+[[ -f "${CONSUMER}/config/apps.yml" ]] || die "missing ${CONSUMER}/config/apps.yml (not a cluster root?)"
+[[ -f "${CONSUMER}/compose.yml" || -f "${CONSUMER}/compose.yaml" ]] || die "missing compose.yml in ${CONSUMER}"
+
+CLUSTER_TASKS_ROOT="$(cd "${CLUSTER_TASKS_ROOT:-$TOOLS_ROOT}" && pwd)"
+[[ -x "${CLUSTER_TASKS_ROOT}/bin/wire" ]] || die "CLUSTER_TASKS_ROOT invalid: ${CLUSTER_TASKS_ROOT}"
+
+# Scripts that must be real files under the consumer (compose mounts only /work).
+MATERIALIZE=(
+  docker-app
+  local-gem-env
+  apps
+)
+
+# Host-only tools: thin wrappers that exec sibling cluster-tasks.
+# lib.sh is sourced by wrappers via the sibling path, not copied.
+HOST_WRAP=(
+  compose
+  warm
+  setup
+  doctor
+  db-reset
+  cache-ensure
+  cache-reset
+  cache-env
+  ensure-bundle-config
+  config
+  wire
+)
+
+MANAGED_BEGIN="# BEGIN cluster-tasks wire"
+MANAGED_END="# END cluster-tasks wire"
+WRAPPER_MARK="# Managed by cluster-tasks wire — do not edit by hand"
+
+write_wrapper() {
+  local name=$1
+  local dest="${CONSUMER}/bin/${name}"
+  cat >"${dest}" <<EOF
+#!/usr/bin/env bash
+${WRAPPER_MARK}
+set -euo pipefail
+export CLUSTER_ROOT="${CONSUMER}"
+export CLUSTER_TASKS_ROOT="${CLUSTER_TASKS_ROOT}"
+exec "\${CLUSTER_TASKS_ROOT}/bin/${name}" "\$@"
+EOF
+  chmod +x "${dest}"
+}
+
+materialize_script() {
+  local name=$1
+  local src="${CLUSTER_TASKS_ROOT}/bin/${name}"
+  local dest="${CONSUMER}/bin/${name}"
+  [[ -f "${src}" ]] || die "missing ${src}"
+  # Copy body; prepend managed mark if not present
+  {
+    echo "#!/usr/bin/env bash"
+    echo "${WRAPPER_MARK} (materialized for in-container /work/bin)"
+    # strip existing shebang from source
+    if head -1 "${src}" | grep -q '^#!'; then
+      tail -n +2 "${src}"
+    else
+      cat "${src}"
+    fi
+  } >"${dest}"
+  chmod +x "${dest}"
+}
+
+ensure_bundler_clean_false() {
+  local flags="${CONSUMER}/config/bundler-flags.yml"
+  if [[ ! -f "${flags}" ]]; then
+    mkdir -p "${CONSUMER}/config"
+    cat >"${flags}" <<'EOF'
+---
+# Seeded by cluster-tasks wire. Multi-app shared BUNDLE_PATH must not prune siblings.
+BUNDLE_CACHE_ALL: "true"
+BUNDLE_CACHE_ALL_PLATFORMS: "true"
+BUNDLE_DISABLE_SHARED_GEMS: "true"
+BUNDLE_CLEAN: "false"
+BUNDLE_JOBS: "4"
+BUNDLE_RETRY: "3"
+EOF
+    log "created ${flags} with BUNDLE_CLEAN=false"
+    return 0
+  fi
+  if grep -qE '^BUNDLE_CLEAN:' "${flags}"; then
+    if grep -qE '^BUNDLE_CLEAN:[[:space:]]*"?false"?' "${flags}"; then
+      log "BUNDLE_CLEAN already false in ${flags}"
+    else
+      # force false for multi-app safety
+      sed -i 's/^BUNDLE_CLEAN:.*/BUNDLE_CLEAN: "false"/' "${flags}"
+      log "set BUNDLE_CLEAN=false in ${flags}"
+    fi
+  else
+    printf '\nBUNDLE_CLEAN: "false"\n' >>"${flags}"
+    log "appended BUNDLE_CLEAN=false to ${flags}"
+  fi
+}
+
+ensure_taskfile_include() {
+  local tf="${CONSUMER}/Taskfile.yml"
+  local rel
+  rel=$(python3 - <<PY
+import os
+c = os.path.abspath("${CONSUMER}")
+t = os.path.abspath("${CLUSTER_TASKS_ROOT}")
+print(os.path.relpath(os.path.join(t, "task", "Taskfile.yml"), c))
+PY
+)
+  local block
+  block=$(cat <<EOF
+${MANAGED_BEGIN}
+# Sibling cluster-tasks Taskfile (see CLUSTER_TASKS_ROOT / ../cluster-tasks)
+includes:
+  ct:
+    taskfile: ${rel}
+    dir: .
+    flatten: true
+${MANAGED_END}
+EOF
+)
+
+  if [[ ! -f "${tf}" ]]; then
+    cat >"${tf}" <<EOF
+# Host UX — includes sibling cluster-tasks (wired).
+version: "3"
+
+${block}
+EOF
+    log "created ${tf} with cluster-tasks include"
+    return 0
+  fi
+
+  if grep -q "${MANAGED_BEGIN}" "${tf}"; then
+    # replace managed block
+    local tmp
+    tmp=$(mktemp)
+    awk -v b="${MANAGED_BEGIN}" -v e="${MANAGED_END}" '
+      $0 == b { skip=1; next }
+      $0 == e { skip=0; next }
+      !skip { print }
+    ' "${tf}" >"${tmp}"
+    # ensure trailing newline
+    if [[ -s "${tmp}" ]] && [[ -n "$(tail -c1 "${tmp}" || true)" ]]; then
+      echo >>"${tmp}"
+    fi
+    printf '%s\n' "${block}" >>"${tmp}"
+    mv "${tmp}" "${tf}"
+    log "refreshed managed include in ${tf}"
+  else
+    # append include; keep existing tasks
+    {
+      echo ""
+      printf '%s\n' "${block}"
+    } >>"${tf}"
+    log "appended cluster-tasks include to ${tf} (you may want to dedupe tasks)"
+  fi
+}
+
+write_env_file() {
+  cat >"${CONSUMER}/.cluster-tasks.env" <<EOF
+# Generated by cluster-tasks wire — source in your shell if useful
+#   source .cluster-tasks.env
+export CLUSTER_ROOT="${CONSUMER}"
+export CLUSTER_TASKS_ROOT="${CLUSTER_TASKS_ROOT}"
+EOF
+  log "wrote ${CONSUMER}/.cluster-tasks.env"
+}
+
+report() {
+  log "consumer:       ${CONSUMER}"
+  log "cluster-tasks:  ${CLUSTER_TASKS_ROOT}"
+  log "apps:           $(CLUSTER_ROOT="${CONSUMER}" "${CLUSTER_TASKS_ROOT}/bin/apps" names-oneline 2>/dev/null || echo '?')"
+}
+
+if [[ "${CHECK_ONLY}" -eq 1 ]]; then
+  report
+  if [[ -x "${CONSUMER}/bin/doctor" ]]; then
+    CLUSTER_ROOT="${CONSUMER}" CLUSTER_TASKS_ROOT="${CLUSTER_TASKS_ROOT}" \
+      "${CONSUMER}/bin/doctor" || true
+  fi
+  exit 0
+fi
+
+if [[ "${YES}" -ne 1 ]]; then
+  printf 'Wire cluster-tasks into\n  %s\nfrom\n  %s\n? [y/N] ' "${CONSUMER}" "${CLUSTER_TASKS_ROOT}"
+  read -r ans
+  [[ "${ans}" == [yY] || "${ans}" == [yY][eE][sS] ]] || { log "aborted"; exit 0; }
+fi
+
+report
+mkdir -p "${CONSUMER}/bin" "${CONSUMER}/config"
+
+log "materializing in-container scripts → ${CONSUMER}/bin/"
+for s in "${MATERIALIZE[@]}"; do
+  materialize_script "${s}"
+  log "  copy ${s}"
+done
+
+log "writing host wrappers → ${CONSUMER}/bin/"
+for s in "${HOST_WRAP[@]}"; do
+  [[ -f "${CLUSTER_TASKS_ROOT}/bin/${s}" ]] || continue
+  write_wrapper "${s}"
+  log "  wrap ${s}"
+done
+
+ensure_bundler_clean_false
+ensure_taskfile_include
+write_env_file
+
+# gitignore helpers
+if [[ -f "${CONSUMER}/.gitignore" ]]; then
+  if ! grep -q '^\.cluster-tasks\.env$' "${CONSUMER}/.gitignore" 2>/dev/null; then
+    printf '\n# cluster-tasks wire\n.cluster-tasks.env\n' >>"${CONSUMER}/.gitignore"
+    log "appended .cluster-tasks.env to .gitignore"
+  fi
+fi
+
+log "running doctor…"
+export CLUSTER_ROOT="${CONSUMER}"
+export CLUSTER_TASKS_ROOT
+if [[ -x "${CONSUMER}/bin/doctor" ]]; then
+  "${CONSUMER}/bin/doctor" || true
+else
+  "${CLUSTER_TASKS_ROOT}/bin/doctor" || true
+fi
+
+log "done. From the cluster root:  task warm   /   task up:all"
+log "Re-run wire anytime to refresh wrappers from cluster-tasks."
