@@ -23,28 +23,28 @@ Living checklist. Check items off in PRs; keep [PLAN.md](PLAN.md) for design nar
 ## Phase 2 — Extract into this repo
 
 - [ ] Add directory layout: `bin/`, `task/`, `docs/`, `templates/`
-- [ ] Port `bin/lib.sh` with `CLUSTER_ROOT` / apps.yml discovery
+- [ ] Port `bin/lib.sh` with `CLUSTER_ROOT` (apps.yml) + `CLUSTER_TASKS_ROOT` (sibling tools)
 - [ ] Port `apps`, `compose`, `warm`, `setup`, `docker-app`, `doctor`, `db-reset`
 - [ ] Port `cache-*`, `cache-env`, `ensure-bundle-config`, `local-gem-env`, `mise-host-env.sh`
 - [ ] Port/adapt generic `task/Taskfile.yml`
 - [ ] Port/adapt mise defaults + document consumer `.mise.env`
 - [ ] Port SHARED-GEMS notes (or link to cluster doc until extract)
 - [ ] Add `templates/apps.yml.example`
-- [ ] README install/adopt section (submodule steps)
-- [ ] Tag **v0.1.0** when smoke passes on a throwaway consumer tree
+- [ ] README install/adopt section (**sibling** clone steps, not nested submodule)
+- [ ] Tag **v0.1.0** when smoke passes with sibling consumer tree
 
-## Phase 3 — docker-mise-cluster becomes consumer
+## Phase 3 — docker-mise-cluster becomes consumer (siblings)
 
-- [ ] Add submodule pin to cluster-tasks
-- [ ] Wire Taskfile `includes` + dir = project root
-- [ ] Thin wrappers or remove duplicated `bin/*`
-- [ ] Update cluster AGENTS/ADOPT/SHARED-GEMS to point at cluster-tasks
+- [ ] Document required layout: `…/cluster-tasks` next to `…/docker-mise-cluster`
+- [ ] Wire Taskfile `includes` → `../cluster-tasks/task/Taskfile.yml` (or `$CLUSTER_TASKS_ROOT`)
+- [ ] Thin `bin/*` wrappers → sibling `bin/*` (or PATH); remove duplicated bodies
+- [ ] Update cluster AGENTS/ADOPT/SHARED-GEMS for sibling tooling
 - [ ] CHANGELOG + release cluster as needed
 - [ ] Triple-push cluster (github, gitlab, ami)
 
 ## Phase 4 — Polish
 
-- [ ] Second minimal consumer fixture (optional CI)
+- [ ] Second minimal consumer fixture (optional CI) as sibling pair
 - [ ] `bin/gen-tasks` (optional) for `up:<app>` shortcuts from apps.yml
 - [ ] Version policy in CHANGELOG / RELEASE notes
 - [ ] setup-remotes or doc snippet for triple remotes on this repo
@@ -52,7 +52,8 @@ Living checklist. Check items off in PRs; keep [PLAN.md](PLAN.md) for design nar
 
 ## Open questions
 
-- [ ] Submodule path name: `.cluster-tasks` vs `cluster-tasks` vs `vendor/cluster-tasks`?
+- [x] Layout: **siblings** (`cluster-tasks` beside the cluster) — not nested submodule
+- [ ] Default env name: `CLUSTER_TASKS_ROOT` only, or also support `../cluster-tasks` auto-detect?
 - [ ] Should `bin/compose` live here if compose file is always consumer-owned? (yes — wrapper only)
 - [ ] Generate nginx snippets later or never?
 - [ ] Relationship to ubuntu-sample host UX — share any scripts?
@@ -62,4 +63,5 @@ Living checklist. Check items off in PRs; keep [PLAN.md](PLAN.md) for design nar
 | Date | Item |
 |------|------|
 | 2026-08-04 | Repo scaffold + PLAN/TODO/CONTRACT docs |
-| 2026-08-04 | Phase 1 started on docker-mise-cluster branch `cluster-tasks-phase1` |
+| 2026-08-04 | Phase 1 on docker-mise-cluster branch `cluster-tasks-phase1` |
+| 2026-08-04 | Locked layout: **siblings**, not nest cluster-tasks under cluster |

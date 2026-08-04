@@ -20,13 +20,23 @@ Today most scripts already read **`config/apps.yml`**, but:
 ## Boundaries
 
 ```text
+  parent/
+  ├── cluster-tasks/          ← this repo (standalone git clone)
+  ├── docker-mise-cluster/    ← consumer (standalone git clone)
+  └── ubuntu-mise/            ← optional sibling for image builds
+
+  Consumer Taskfile / bin wrappers point at ../cluster-tasks
+  (or $CLUSTER_TASKS_ROOT). No nesting cluster-tasks inside the cluster repo.
+```
+
+```text
 ┌─────────────────────────────────────────────────────────┐
-│  cluster-tasks (this repo)                              │
+│  cluster-tasks (sibling checkout)                       │
 │  bin/*, generic Taskfile, mise defaults, contracts      │
 └──────────────────────────▲──────────────────────────────┘
-                           │ submodule / include
+                           │ PATH / Task include / thin wrappers
 ┌──────────────────────────┴──────────────────────────────┐
-│  Consumer cluster (work/, docker-mise-cluster, …)       │
+│  Consumer cluster (docker-mise-cluster, work/, …)       │
 │  config/apps.yml, compose.yml, nginx/, apps, gems       │
 └─────────────────────────────────────────────────────────┘
                            │ image contract
@@ -39,7 +49,7 @@ Today most scripts already read **`config/apps.yml`**, but:
 
 | Decision | Choice |
 |----------|--------|
-| Distribution | **Git submodule** (or subtree) under e.g. `.cluster-tasks/` |
+| Distribution | **Sibling clone** next to the cluster (`../cluster-tasks` or `CLUSTER_TASKS_ROOT`) — **not** a nested submodule of the cluster |
 | Config SSOT for apps | Consumer **`config/apps.yml`** only |
 | Compose | Consumer-owned; tasks shell out to `bin/compose` against project root |
 | Task UX | Generic `warm`, `setup`, `compose`, `up`, `up:all`, `db:reset`; optional **generated** `up:<name>` later |
@@ -47,7 +57,7 @@ Today most scripts already read **`config/apps.yml`**, but:
 | Image | Default `ubuntu-mise:dev`; override via env / `.mise.env` |
 | Cache volume | Default name `cache` → `/cache` |
 | Shared gems | `shared_gems` in apps.yml + `bin/local-gem-env` |
-| Versioning | semver tags; consumers pin submodule SHA |
+| Versioning | semver tags on cluster-tasks; consumers pin via checkout branch/tag/SHA of the **sibling** clone |
 
 ## Extraction source
 

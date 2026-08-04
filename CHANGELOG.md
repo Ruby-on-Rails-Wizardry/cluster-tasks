@@ -14,6 +14,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Adoption model: **sibling clones** (`cluster-tasks` beside the cluster), not nested submodule
+
+
 ### Fixed
 
 ### Security

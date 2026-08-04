@@ -15,7 +15,8 @@ Read [docs/PLAN.md](docs/PLAN.md) and [docs/TODO.md](docs/TODO.md) before large 
 4. Keep the **ubuntu-mise / `/work` / `/cache`** contract stable; document breaking changes in CHANGELOG.
 5. Prefer **minimal diffs**; do not reintroduce Yarn Berry or dual host `.cache` trees.
 6. Remotes: **github** (canonical), **gitlab**, **ami** — push all three after meaningful commits.
-7. Until **v0.1.0**, do not tell consumers to submodule this repo for production use.
+7. Until **v0.1.0**, do not wire production clusters to this tooling.
+8. **Sibling layout only** — never document nesting `cluster-tasks` inside a cluster repo as a submodule.
 
 ## Phrase shortcuts
 

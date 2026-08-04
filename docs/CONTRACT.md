@@ -6,13 +6,16 @@ What a cluster project **must** provide for cluster-tasks to work (v0.1+ target)
 
 | Path / fact | Meaning |
 |-------------|---------|
-| **Project root** | Directory from which `task` / `bin/*` are run |
+| **Project root** | Directory from which `task` / `bin/*` are run (the **cluster** clone) |
+| **Sibling tooling** | `cluster-tasks` checked out next to the cluster (default `../cluster-tasks`) or `CLUSTER_TASKS_ROOT` |
 | **`config/apps.yml`** | List of apps (`name`, `path`, `port`, …) and optional `shared_gems` |
 | **`compose.yml`** | Dev stack; service names should match app `name`s for `compose up <name>` |
 | **Docker** | Daemon available; prefer `bin/compose` wrapper |
 | **Image** | `ubuntu-mise:dev` (or `IMAGE=…`) built for this host UID |
 | **Mount** | Compose bind-mounts project root to **`/work`** |
 | **Cache** | Named volume (default `cache`) mounted at **`/cache`** |
+
+**Do not** nest `cluster-tasks` as a git submodule of the cluster. Keep both repos as **siblings** (same pattern as standalone `docker-mise-cluster` next to `ubuntu-mise`).
 
 ### Minimal `config/apps.yml`
 
