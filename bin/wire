@@ -76,6 +76,7 @@ HOST_WRAP=(
   config
   wire
   nuke-bootboot
+  local-gem
 )
 
 MANAGED_BEGIN="# BEGIN cluster-tasks wire"
@@ -262,6 +263,10 @@ if [[ -f "${CONSUMER}/.gitignore" ]]; then
   if ! grep -q '^\.cluster-tasks\.env$' "${CONSUMER}/.gitignore" 2>/dev/null; then
     printf '\n# cluster-tasks wire\n.cluster-tasks.env\n' >>"${CONSUMER}/.gitignore"
     log "appended .cluster-tasks.env to .gitignore"
+  fi
+  if ! grep -q '^\.local-gems\.disabled$' "${CONSUMER}/.gitignore" 2>/dev/null; then
+    printf '.local-gems.disabled\n' >>"${CONSUMER}/.gitignore"
+    log "appended .local-gems.disabled to .gitignore"
   fi
 fi
 

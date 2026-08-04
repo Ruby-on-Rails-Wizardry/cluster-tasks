@@ -64,14 +64,27 @@ export YARN_OFFLINE_MIRROR="${YARN_OFFLINE_MIRROR:-/cache/yarn}"
 export PATH="/docker/bin:${HOME}/.local/bin:${MISE_DATA_DIR}/shims:${PATH}"
 
 # Shared library gems: published pin in Gemfile; path override for cluster dev.
-# (bundle config local.* — no bootboot dual-lock for path vs Nexus.)
-if [[ -f /work/bin/local-gem-env ]]; then
+# (BUNDLE_LOCAL__* via local-gem-env — no bootboot dual-lock for path vs Nexus.)
+# Off when .local-gems.disabled or LOCAL_GEMS=0|false|off (see bin/local-gem).
+_local_gems_on=1
+case "${LOCAL_GEMS:-}" in
+  0|false|FALSE|off|OFF|no|NO) _local_gems_on=0 ;;
+  1|true|TRUE|on|ON|yes|YES) _local_gems_on=1 ;;
+  *)
+    if [[ -f /work/.local-gems.disabled ]]; then
+      _local_gems_on=0
+    fi
+    ;;
+esac
+if [[ "${_local_gems_on}" -eq 1 && -f /work/bin/local-gem-env ]]; then
   # shellcheck disable=SC1091
   eval "$(/work/bin/local-gem-env /work)"
   echo "== warm: local gem overrides (path checkouts)"
   /work/bin/local-gem-env /work --print | while IFS= read -r line; do
     echo "   ${line}"
   done
+elif [[ "${_local_gems_on}" -eq 0 ]]; then
+  echo "== warm: local gem overrides DISABLED (bin/local-gem enable to turn on)"
 fi
 
 # WARM_ISOLATE_BUNDLE=1 → BUNDLE_PATH=/cache/bundle/<app> (share rubygems + user home)

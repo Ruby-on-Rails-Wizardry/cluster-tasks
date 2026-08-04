@@ -50,6 +50,7 @@ task db:reset -- app1
 
 | Doc | Purpose |
 |-----|---------|
+| [docs/LOCAL-GEMS.md](docs/LOCAL-GEMS.md) | **Shared library gems** — path overrides, enable/disable |
 | [docs/PLAN.md](docs/PLAN.md) | Design, boundaries, extraction phases |
 | [docs/TODO.md](docs/TODO.md) | Checklist of work remaining |
 | [docs/CONTRACT.md](docs/CONTRACT.md) | What the consumer must provide |

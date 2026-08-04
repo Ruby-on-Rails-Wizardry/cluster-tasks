@@ -39,7 +39,7 @@ shared_gems: []
 | Path | Meaning |
 |------|---------|
 | Root `Gemfile` | Tooling only; warm may install it |
-| `shared_gems` + path checkouts | `bin/local-gem-env` → `BUNDLE_LOCAL__*` |
+| `shared_gems` + path checkouts | `bin/local-gem` / `local-gem-env` → `BUNDLE_LOCAL__*` ([LOCAL-GEMS.md](LOCAL-GEMS.md)) |
 | `config/bundler-flags.yml` | Seed for `ensure-bundle-config` |
 | Per-app `Taskfile.yml` | `task <app> -- …` delegates into app tree |
 | `nginx/` | Front door; doctor may check `nginx/nginx.conf` if present |

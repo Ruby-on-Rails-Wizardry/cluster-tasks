@@ -79,6 +79,11 @@ tasks:
     cmds:
       - ./bin/nuke-bootboot {{.CLI_ARGS}}
 
+  local-gem:
+    desc: "Shared gem path overrides — task local-gem -- status|enable|disable|env"
+    cmds:
+      - ./bin/local-gem {{.CLI_ARGS}}
+
   compose:
     desc: "Pass-through to bin/compose (task compose -- ps)"
     cmds:

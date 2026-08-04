@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `docs/LOCAL-GEMS.md` — short guide for Bundler local.* / `shared_gems`
+- `bin/local-gem` / `task local-gem` — **status | enable | disable | env** for path
+  overrides (flag: `.local-gems.disabled`; one-shot `LOCAL_GEMS=0`)
+- warm / docker-app / setup honor disable flag and `LOCAL_GEMS`
+
 ### Changed
 
 ### Fixed
