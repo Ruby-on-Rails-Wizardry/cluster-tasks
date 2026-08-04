@@ -83,7 +83,7 @@ task up:all
 
 ## Status
 
-**v0.1.0** — bins + `wire` + doctor; smoke-tested with sibling [docker-mise-cluster](https://github.com/Ruby-on-Rails-Wizardry/docker-mise-cluster) branch `cluster-tasks-phase1` (warm + up:all, nginx path routing, shared gem path override). Pin a sibling checkout at tag **v0.1.0** or track `master`.
+**v0.1.1** — bins + `wire` + doctor + `bootboot:nuke`; smoke-tested with sibling [docker-mise-cluster](https://github.com/Ruby-on-Rails-Wizardry/docker-mise-cluster) branch `cluster-tasks-phase1` (warm + up:all). Pin a sibling checkout at tag **v0.1.1** (or **v0.1.0**) or track `master`.
 
 ## License
 

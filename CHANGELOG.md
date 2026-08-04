@@ -9,15 +9,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- `bin/nuke-bootboot` / `task bootboot:nuke` — remove installed bootboot artifacts
-  (per-app `.bundle/plugin`, isolate `/cache/bundle/<app>`, bootboot gem trees;
-  optional `--locks` for `Gemfile_next.lock`). Dry-run by default; pass `-y`.
-
 ### Changed
 
 ### Fixed
 
 ### Security
+
+## [0.1.1] - 2026-08-04
+
+### Added
+
+- `bin/nuke-bootboot` / `task bootboot:nuke` — remove installed bootboot artifacts
+  (per-app `.bundle/plugin`, isolate `/cache/bundle/<app>`, bootboot gem trees;
+  optional `--locks` for `Gemfile_next.lock`). Dry-run by default; pass `-y`.
+- `wire` host wrapper list includes `nuke-bootboot`
 
 ## [0.1.0] - 2026-08-04
 

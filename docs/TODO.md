@@ -71,3 +71,4 @@ Living checklist. Check items off in PRs; keep [PLAN.md](PLAN.md) for design nar
 | 2026-08-04 | Locked layout: **siblings**, not nest cluster-tasks under cluster |
 | 2026-08-04 | `bin/wire` + ported bins; doctor BUNDLE_CLEAN / materialize checks |
 | 2026-08-04 | Smoke warm + up:all on phase1; fix docker-app Postgres wait; **v0.1.0** |
+| 2026-08-04 | `bin/nuke-bootboot` / `task bootboot:nuke`; **v0.1.1** |
