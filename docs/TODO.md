@@ -13,12 +13,12 @@ Living checklist. Check items off in PRs; keep [PLAN.md](PLAN.md) for design nar
 
 ## Phase 1 — Genericize source (in docker-mise-cluster first)
 
-- [ ] Audit `bin/*` for hard-coded app names / ports / paths
-- [ ] Replace doctor/setup banners with `bin/apps` output
-- [ ] Remove `fred ron harry george` fallbacks in `lib.sh`
-- [ ] Ensure `up:all` / multi-app compose args only use `bin/apps names`
-- [ ] Decide: drop per-app Task targets vs generate them
-- [ ] Smoke: warm + one-app up + all-up on docker-mise-cluster
+- [x] Audit `bin/*` for hard-coded app names / ports / paths
+- [x] Replace doctor/setup banners with `bin/apps` output
+- [x] Remove `fred ron harry george` fallbacks in `lib.sh`
+- [x] Ensure `up:all` / multi-app compose args only use `bin/apps names`
+- [x] Decide: drop per-app Task targets vs generate them
+- [ ] Smoke: warm + one-app up + all-up on docker-mise-cluster (partial: doctor/apps/compose)
 
 ## Phase 2 — Extract into this repo
 
@@ -62,3 +62,4 @@ Living checklist. Check items off in PRs; keep [PLAN.md](PLAN.md) for design nar
 | Date | Item |
 |------|------|
 | 2026-08-04 | Repo scaffold + PLAN/TODO/CONTRACT docs |
+| 2026-08-04 | Phase 1 started on docker-mise-cluster branch `cluster-tasks-phase1` |
