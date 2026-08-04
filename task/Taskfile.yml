@@ -74,6 +74,11 @@ tasks:
     cmds:
       - ./bin/cache-reset {{.CLI_ARGS}}
 
+  bootboot:nuke:
+    desc: "Remove installed bootboot plugins/isolate dirs (task bootboot:nuke -- -y)"
+    cmds:
+      - ./bin/nuke-bootboot {{.CLI_ARGS}}
+
   compose:
     desc: "Pass-through to bin/compose (task compose -- ps)"
     cmds:

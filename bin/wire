@@ -75,6 +75,7 @@ HOST_WRAP=(
   ensure-bundle-config
   config
   wire
+  nuke-bootboot
 )
 
 MANAGED_BEGIN="# BEGIN cluster-tasks wire"
