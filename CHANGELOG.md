@@ -16,6 +16,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- `bin/wire` rewrites consumer `Taskfile.yml` to a thin include: strips tasks that
+  already live in cluster-tasks (and obsolete per-app `up:<name>` /
+  `db:reset:<name>` / bare app-name shortcuts). Custom tasks are kept.
+  **`config/apps.yml` is never written** (read-only for discovery).
+
 ### Fixed
 
 ### Security
