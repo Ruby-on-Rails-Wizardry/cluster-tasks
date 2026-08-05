@@ -3,50 +3,40 @@
 How multi-app clusters should layer env so **compose stays dry**, **non-secrets
 stay in git**, and **vault secrets stay out of git**.
 
-## Inventory (what people usually have)
+Package-manager **cache paths** (`BUNDLE_PATH`, `YARN_*`, `MISE_*`, …) are **not**
+listed in compose. They come from the **ubuntu-mise** image (user configs under
+`$HOME` + image ENV). See
+[ubuntu-mise docs/runtime-env-not-required.md](https://github.com/Ruby-on-Rails-Wizardry/ubuntu-mise/blob/master/docs/runtime-env-not-required.md).
+
+## Inventory
 
 | File / pattern | Typical role | In git? |
 |----------------|--------------|---------|
-| **`.env`** | Compose **project** knobs (`IMAGE`, `POSTGRES_*`) written by `bin/compose` — host-side for compose interpolation | No (generated) |
+| **`.env`** | Compose **project** knobs (`IMAGE`, `POSTGRES_*`) from `bin/compose` | No (generated) |
 | **`.mise.env`** | Host tool defaults | Yes |
-| **`config/cache.env`** | Container cache paths (`BUNDLE_PATH=/cache/…`) | No (generated) |
-| **`config/shared.env`** | Shared **non-secret** app env (`RAILS_ENV`, feature flags, …) | Yes |
-| **`.proxy.env`**, **`.oauth2.env`**, **`.fred.env`**, … | Vault / secrets | No |
+| **`config/cache.env`** | **Stub only** (no package ENV) — optional; not for compose `env_file` | No (generated) |
+| **`config/shared.env`** | Shared **non-secret** app env (`RAILS_ENV`, flags, …) | Yes |
+| **`.proxy.env`**, **`.fred.env`**, … | Vault / secrets | No |
 | **`compose.yml` `environment:`** | Topology (ports, `DATABASE_URL` hostnames, url roots) | Yes |
 
-### Reference: anonymized “partial” cluster
-
-Real multi-app compose often looks like:
-
-```yaml
-env_file:
-  - .proxy.env    # shared secrets (oauth / proxy)
-  - .fred.env     # per-app secrets
-  - .env          # mixed common — sometimes accidentally includes passwords
-```
-
-Repeated on **every** service. Secrets and common are mixed; DRY is poor.
-
-### Target model (this tooling)
+### Target model
 
 ```text
-config/cache.env      # generated — /cache paths (non-secret)
 config/shared.env     # committed — shared non-secrets only
 .proxy.env            # vault — optional shared secrets
 .fred.env             # vault — per-app secrets
-
-compose.yml           # x-app env_file: only cache + shared
-compose.secrets.yml   # GENERATED — only secret env_file lines per service
+# /cache layout: ubuntu-mise image (not compose env_file)
 ```
-
-Compose multi-file merge **appends** `env_file` lists, so apps do not restate shared files.
 
 ```yaml
 # compose.yml — once on x-app
 x-app: &app
+  image: ${IMAGE:-ubuntu-mise:dev}
   env_file:
-    - config/cache.env
     - config/shared.env
+  volumes:
+    - .:/work:cached
+    - cache:/cache
 ```
 
 ```yaml
@@ -59,48 +49,42 @@ services:
 ```
 
 ```bash
-bin/compose up fred   # uses both files when secrets fragment exists
+bin/compose up fred   # uses secrets fragment when present
 ```
 
 ## Manifest: `config/env.yml`
 
 ```yaml
 shared:
-  - config/cache.env
   - config/shared.env
 
-shared_secrets:
-  - .proxy.env          # optional; skipped if file missing (unless required: true)
+shared_secrets: []
+# shared_secrets:
+#   - .proxy.env
 
-# default per-app secret path: .<name>.env  (apps from config/apps.yml)
 app_secrets: {}
-# app_secrets:
-#   fred: .fred.env
-#   ron: .ron.env
+options:
+  require_secrets: false
+  secrets_compose: compose.secrets.yml
 ```
 
 ## Commands
 
 ```bash
-task env:files -- status     # show layers + missing secrets
-task env:files -- write      # cache.env + compose.secrets.yml
-bin/env-files write
-bin/compose up …             # auto write + include secrets fragment
+task env:files -- status
+task env:files -- write      # shared.env seed + compose.secrets.yml
+bin/compose up …
 ```
 
 ## Rules
 
-1. **Never** put vault material in `config/shared.env` or `config/cache.env`.
+1. **Never** put vault material in `config/shared.env`.
 2. **Never** commit `.*\.env` secret files (gitignore).
-3. Topology (`PORT`, path prefix, DB name on `db` host) stays in **compose `environment:`**.
-4. Prefer passwords only in vault files; demo clusters may use compose/db-env for local-only creds.
+3. Topology (`PORT`, path prefix, DB name) stays in **compose `environment:`**.
+4. **Do not** re-inject `BUNDLE_*` / `YARN_*` / `MISE_*` / `NPM_*` / `PIP_*` / … via compose for the default image layout.
+5. Prefer passwords only in vault files; demo clusters may use compose/db-env for local-only creds.
 
-## Compare to single mega-file
+## Related
 
-| Approach | Pros | Cons |
-|----------|------|------|
-| One merged `config/shared_app.env` | One path | Secrets and non-secrets collide; hard to gitignore half a file |
-| **`shared` list + secrets fragment** | Dry compose, clear git boundary | Need `env-files write` / compose wrapper |
-| YAML-only anchors | No generator | Must restate full `env_file` list per app |
-
-We use **shared list in compose + generated secrets fragment**.
+- [ubuntu-mise runtime-env-not-required](https://github.com/Ruby-on-Rails-Wizardry/ubuntu-mise/blob/master/docs/runtime-env-not-required.md)
+- [LOCAL-GEMS.md](LOCAL-GEMS.md) — `BUNDLE_LOCAL__*` path overrides (still process ENV when enabled)

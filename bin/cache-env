@@ -4,7 +4,7 @@
 #
 #   source bin/cache-env
 #   bin/cache-env                 # print
-#   bin/cache-env --write         # write config/cache.env (compose env_file)
+#   bin/cache-env --write         # write config/cache.env stub (no package ENV)
 #   bin/cache-env --write-yarnrc  # classic Yarn offline-mirror → /cache/yarn
 #   task cache:env                # print via Task
 set -euo pipefail
@@ -68,7 +68,7 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
 Usage:
   source bin/cache-env
   bin/cache-env
-  bin/cache-env --write           # config/cache.env for compose env_file
+  bin/cache-env --write           # config/cache.env stub (image owns /cache layout)
   bin/cache-env --write-yarnrc
 EOF
       ;;

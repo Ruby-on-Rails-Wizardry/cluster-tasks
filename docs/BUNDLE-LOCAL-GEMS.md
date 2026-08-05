@@ -149,4 +149,16 @@ If the **existing** Gemfile line uses a **git** source, Bundler requires that li
 
 ## Reference
 
-[Bundler: local git repos / local overrides](https://bundler.io/guides/git.html#local-git-repos)
+- Local directory override via **`bundle config set … local.GEM_NAME`**:  
+  [Bundler guide — Local git repos](https://bundler.io/guides/git.html#local-git-repos)  
+  (same mechanism; path is a local checkout directory)
+
+- **Environment variable** form of any config key (including `local.*`):  
+  [bundle-config — Build flags / Environment Variables](https://bundler.io/v2.4/man/bundle-config.1.html#BUILD-FLAGS)  
+  and the RubyGems command reference:  
+  [bundle config — Environment Variables](https://guides.rubygems.org/command-reference/bundle-config/)  
+
+  Those pages document that config keys map to env vars by uppercasing and
+  replacing `.` with `__`. Example given there: `local.rack` →
+  **`BUNDLE_LOCAL__RACK`**. That is the documented source for the
+  `BUNDLE_LOCAL__*` method (not a separate feature from `local.*` config).

@@ -272,16 +272,15 @@ fi
 '
 
 tz="$(host_timezone)"
+# Package-cache ENV comes from ubuntu-mise image (user configs + image ENV).
+# Only pass warm-specific knobs and shell/TZ here.
 docker run --rm \
   -v "${ROOT}:/work:cached" \
   -v "${CACHE_VOLUME}:/cache" \
-  -e "CACHE_ROOT=/cache" \
-  -e "BUNDLE_USER_HOME=/cache/bundler" \
-  -e "BUNDLE_CLEAN=false" \
-  -e "BUNDLE_NO_PRUNE=true" \
   -e "WARM_ISOLATE_BUNDLE=${WARM_ISOLATE_BUNDLE:-0}" \
   -e "WARM_SKIP_NEXT_LOCK=${WARM_SKIP_NEXT_LOCK:-1}" \
   -e "WARM_FORCE_CACHE=${WARM_FORCE_CACHE:-0}" \
+  -e "LOCAL_GEMS=${LOCAL_GEMS:-}" \
   -e "TZ=${tz}" \
   -e "TERM=${TERM:-xterm-256color}" \
   -w /work \

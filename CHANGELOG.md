@@ -19,6 +19,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Doctor accepts installed/vendored tooling without `../cluster-tasks`
 - README: prefer install for standalone consumers; wire for live sibling wrappers
+- **No package-cache ENV in compose:** `config/cache.env` is a stub; `env.yml` /
+  docs default to `config/shared.env` only. `/cache` layout comes from
+  **ubuntu-mise** user configs + image (see ubuntu-mise `docs/runtime-env-not-required.*`)
 
 ### Fixed
 

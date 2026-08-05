@@ -2,7 +2,7 @@
 # Manage layered env for multi-app compose: shared non-secrets vs vault secrets.
 #
 #   bin/env-files status
-#   bin/env-files write     # config/cache.env + compose.secrets.yml
+#   bin/env-files write     # shared.env seed + compose.secrets.yml (+ cache.env stub)
 #   bin/env-files list      # print shared env_file paths (for docs/debug)
 #   task env:files -- status|write
 #
@@ -37,7 +37,7 @@ manifest = if manifest_path.file?
   YAML.safe_load(manifest_path.read, aliases: true) || {}
 else
   {
-    "shared" => ["config/cache.env", "config/shared.env"],
+    "shared" => ["config/shared.env"],
     "shared_secrets" => [],
     "app_secrets" => {},
     "options" => {},
@@ -45,7 +45,7 @@ else
 end
 
 opts = manifest["options"] || {}
-shared = Array(manifest["shared"] || ["config/cache.env", "config/shared.env"])
+shared = Array(manifest["shared"] || ["config/shared.env"])
 shared_secrets = Array(manifest["shared_secrets"] || [])
 app_secrets = manifest["app_secrets"] || {}
 secrets_compose = opts["secrets_compose"] || "compose.secrets.yml"
@@ -182,7 +182,6 @@ EOF
       else
         cat >"${MANIFEST}" <<'EOF'
 shared:
-  - config/cache.env
   - config/shared.env
 shared_secrets: []
 app_secrets: {}
