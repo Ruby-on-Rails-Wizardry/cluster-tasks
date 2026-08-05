@@ -195,7 +195,7 @@ bundle_one() {
     fi
 
     if [[ "${did_install}" -eq 1 || "${WARM_FORCE_CACHE}" == "1" ]]; then
-      # BUNDLE_NO_PRUNE=true: do not delete other apps' gems from shared cache path.
+      # BUNDLE_NO_PRUNE=true: do not delete sibling-app gems from shared cache path.
       echo "   bundle cache --all-platforms → ${BUNDLE_CACHE_PATH} (no-prune)"
       BUNDLE_NO_PRUNE=true bundle cache --all-platforms 2>/dev/null || true
     else
