@@ -38,7 +38,7 @@ manifest = if manifest_path.file?
 else
   {
     "shared" => ["config/shared.env"],
-    "shared_secrets" => [],
+    "shared_secrets" => [".common.env"],
     "app_secrets" => {},
     "options" => {},
   }
@@ -46,7 +46,7 @@ end
 
 opts = manifest["options"] || {}
 shared = Array(manifest["shared"] || ["config/shared.env"])
-shared_secrets = Array(manifest["shared_secrets"] || [])
+shared_secrets = Array(manifest["shared_secrets"].nil? ? [".common.env"] : manifest["shared_secrets"])
 app_secrets = manifest["app_secrets"] || {}
 secrets_compose = opts["secrets_compose"] || "compose.secrets.yml"
 require_secrets = !!opts["require_secrets"]

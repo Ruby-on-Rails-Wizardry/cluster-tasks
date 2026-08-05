@@ -12,8 +12,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **`WORK_MOUNT`** (alias **`WORKSPACE`**) — configurable project bind path in the
   container (default `/work`). Compose, warm, docker-app, db-reset honor it.
   Docs: [WORK-MOUNT.md](docs/WORK-MOUNT.md).
+- **`.common.env`** — default shared-secrets file (vault); `config/shared.env` for
+  non-secrets only. Compose interpolation writes **`config/compose.env`** and
+  **does not overwrite `.env`**.
 
 ### Changed
+
+- `bin/compose` uses `config/compose.env` (gitignored) instead of regenerating `.env`
 
 ### Fixed
 
