@@ -2,6 +2,9 @@
 
 Easy guide for **path-vs-published** shared gems in a multi-app cluster.
 
+Bundler-only (no cluster tooling): **[BUNDLE-LOCAL-GEMS.md](BUNDLE-LOCAL-GEMS.md)** —
+point Bundler at a local gem directory without changing the Gemfile.
+
 Bundler can resolve a gem from a **local checkout** while the Gemfile still pins
 the **published** version (Nexus / rubygems / git). That is what we use for
 library gems edited next to the apps. **Not** Shopify bootboot (dual lockfiles).

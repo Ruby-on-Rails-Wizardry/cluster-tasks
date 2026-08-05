@@ -50,7 +50,8 @@ task db:reset -- app1
 
 | Doc | Purpose |
 |-----|---------|
-| [docs/LOCAL-GEMS.md](docs/LOCAL-GEMS.md) | **Shared library gems** — path overrides, enable/disable |
+| [docs/BUNDLE-LOCAL-GEMS.md](docs/BUNDLE-LOCAL-GEMS.md) | **Bundler only** — local directory for a gem (config + ENV, no tooling) |
+| [docs/LOCAL-GEMS.md](docs/LOCAL-GEMS.md) | **Shared library gems** — path overrides, enable/disable (cluster tooling) |
 | [docs/ENV.md](docs/ENV.md) | **Env files** — shared vs vault secrets, dry compose |
 | [docs/PLAN.md](docs/PLAN.md) | Design, boundaries, extraction phases |
 | [docs/TODO.md](docs/TODO.md) | Checklist of work remaining |

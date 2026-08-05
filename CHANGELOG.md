@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `docs/BUNDLE-LOCAL-GEMS.md` — Bundler-only: local directory override (`local.*` /
+  `BUNDLE_LOCAL__*`) with no Gemfile change and no cluster tooling
+
 ### Changed
 
 ### Fixed
