@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **`WORK_MOUNT`** (alias **`WORKSPACE`**) — configurable project bind path in the
+  container (default `/work`). Compose, warm, docker-app, db-reset honor it.
+  Docs: [WORK-MOUNT.md](docs/WORK-MOUNT.md).
+
 ### Changed
 
 ### Fixed

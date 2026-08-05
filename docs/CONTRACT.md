@@ -12,7 +12,7 @@ What a cluster project **must** provide for cluster-tasks to work (v0.1+ target)
 | **`compose.yml`** | Dev stack; service names should match app `name`s for `compose up <name>` |
 | **Docker** | Daemon available; prefer `bin/compose` wrapper |
 | **Image** | `ubuntu-mise:dev` (or `IMAGE=…`) built for this host UID |
-| **Mount** | Compose bind-mounts project root to **`/work`** |
+| **Mount** | Compose bind-mounts project root to **`WORK_MOUNT`** (default **`/work`**; see [WORK-MOUNT.md](WORK-MOUNT.md)) |
 | **Cache** | Named volume (default `cache`) mounted at **`/cache`** |
 
 **Do not** nest `cluster-tasks` as a git submodule of the cluster. Keep both repos as **siblings** (same pattern as standalone `docker-mise-cluster` next to `ubuntu-mise`).
