@@ -6,23 +6,34 @@ The pin stays the source of truth for deploy and for the lockfile. Local overrid
 
 ## TL;DR
 
-Gem name `my_lib`, directory `/path/to/my_lib` (gem root with the `.gemspec`):
+Gem name `my_lib`, directory `/path/to/my_lib` (gem root with the `.gemspec`).
+Run `bundle install` after turning an override on or off.
+
+**On — config** (writes app `.bundle/config`):
 
 ```bash
-# On — config (writes app .bundle/config)
 bundle config set --local local.my_lib /path/to/my_lib
+```
 
-# On — environment (this shell / process only)
+**On — environment** (this shell / process only):
+
+```bash
 export BUNDLE_LOCAL__MY_LIB=/path/to/my_lib
+```
 
-# Off — config
+**Off — config:**
+
+```bash
 bundle config unset --local local.my_lib
+```
 
-# Off — environment
+**Off — environment:**
+
+```bash
 unset BUNDLE_LOCAL__MY_LIB
 ```
 
-Then `bundle install` (after on or off). Hyphenated gem names: `some-gem` → `local.some-gem` / `BUNDLE_LOCAL__SOME_GEM`.
+Hyphenated gem names: `some-gem` → `local.some-gem` / `BUNDLE_LOCAL__SOME_GEM`.
 
 ---
 
