@@ -74,6 +74,11 @@ tasks:
     cmds:
       - ./bin/cache-env {{.CLI_ARGS}}
 
+  env:files:
+    desc: "Env layers status/write (task env:files -- status|write) — docs/ENV.md"
+    cmds:
+      - ./bin/env-files {{.CLI_ARGS}}
+
   cache:reset:
     desc: "Delete shared /cache volume (task cache:reset -- -y)"
     cmds:

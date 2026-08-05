@@ -82,6 +82,7 @@ HOST_WRAP=(
   wire
   nuke-bootboot
   local-gem
+  env-files
 )
 
 MANAGED_BEGIN="# BEGIN cluster-tasks wire"
@@ -369,10 +370,19 @@ if [[ -f "${CONSUMER}/.gitignore" ]]; then
     printf 'config/cache.env\n' >>"${CONSUMER}/.gitignore"
     log "appended config/cache.env to .gitignore"
   fi
+  if ! grep -q '^compose\.secrets\.yml$' "${CONSUMER}/.gitignore" 2>/dev/null; then
+    printf 'compose.secrets.yml\n' >>"${CONSUMER}/.gitignore"
+    log "appended compose.secrets.yml to .gitignore"
+  fi
+  # Vault-style secret env files
+  if ! grep -q '^\.\*\.env$' "${CONSUMER}/.gitignore" 2>/dev/null && ! grep -q '^\.\*\.env' "${CONSUMER}/.gitignore" 2>/dev/null; then
+    printf '.*.env\n' >>"${CONSUMER}/.gitignore"
+    log "appended .*.env to .gitignore"
+  fi
 fi
 
-# Seed config/cache.env so compose env_file works before first warm.
-CLUSTER_ROOT="${CONSUMER}" "${CLUSTER_TASKS_ROOT}/bin/cache-env" --write
+# Seed cache/shared env + secrets compose fragment (docs/ENV.md).
+CLUSTER_ROOT="${CONSUMER}" "${CLUSTER_TASKS_ROOT}/bin/env-files" write
 
 log "running doctor…"
 export CLUSTER_ROOT="${CONSUMER}"

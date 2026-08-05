@@ -24,7 +24,13 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib.sh"
 
 ensure_image
 ensure_cache_volume
-write_cache_env_file "${ROOT}/config/cache.env"
+if [[ -x "${ROOT}/bin/env-files" ]]; then
+  "${ROOT}/bin/env-files" write
+elif [[ -n "${CLUSTER_TASKS_ROOT:-}" && -x "${CLUSTER_TASKS_ROOT}/bin/env-files" ]]; then
+  CLUSTER_ROOT="${ROOT}" "${CLUSTER_TASKS_ROOT}/bin/env-files" write
+else
+  write_cache_env_file "${ROOT}/config/cache.env"
+fi
 
 # Each app owns .bundle/config (bootboot writes here). Seed defaults if missing.
 "${ROOT}/bin/ensure-bundle-config"
