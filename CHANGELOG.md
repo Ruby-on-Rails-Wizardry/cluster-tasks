@@ -9,6 +9,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+### Changed
+
+### Fixed
+
+### Security
+
+## [0.2.0] - 2026-08-05
+
+### Added
+
 - `docs/LOCAL-GEMS.md` — short guide for Bundler local.* / `shared_gems`
 - `bin/local-gem` / `task local-gem` — **status | enable | disable | env** for path
   overrides (flag: `.local-gems.disabled`; one-shot `LOCAL_GEMS=0`)
@@ -18,6 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Env layering** (`docs/ENV.md`): `config/shared.env` (committed non-secrets),
   `config/env.yml` manifest, `bin/env-files` / `task env:files`, generated
   **`compose.secrets.yml`** for vault `.*\.env` so x-app only lists shared files
+- Templates: `templates/env.yml.example`, `templates/shared.env.example`, `templates/cache.env.example`
 
 ### Changed
 
@@ -25,6 +36,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   already live in cluster-tasks (and obsolete per-app `up:<name>` /
   `db:reset:<name>` / bare app-name shortcuts). Custom tasks are kept.
   **`config/apps.yml` is never written** (read-only for discovery).
+- `bin/compose` regenerates layered env and includes `compose.secrets.yml` when present
 
 ### Fixed
 

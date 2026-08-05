@@ -85,7 +85,7 @@ task up:all
 
 ## Status
 
-**v0.1.1** — bins + `wire` + doctor + `bootboot:nuke`; smoke-tested with sibling [docker-mise-cluster](https://github.com/Ruby-on-Rails-Wizardry/docker-mise-cluster) branch `cluster-tasks-phase1` (warm + up:all). Pin a sibling checkout at tag **v0.1.1** (or **v0.1.0**) or track `master`.
+**v0.2.0** — wire, warm/up, local-gem, env layering (`config/shared.env` + vault `compose.secrets.yml`), cache.env, bootboot:nuke. Pin sibling checkout at tag **v0.2.0** or track `master`.
 
 ## License
 
