@@ -9,6 +9,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+### Changed
+
+### Fixed
+
+### Security
+
+## [0.3.0] - 2026-08-05
+
+### Added
+
 - `docs/BUNDLE-LOCAL-GEMS.md` — Bundler-only: local directory override (`local.*` /
   `BUNDLE_LOCAL__*`) with no Gemfile change and no cluster tooling
 - **`bin/install`** / `wire --install` — standalone install: copy all bins + `lib.sh`,

@@ -99,7 +99,9 @@ Prefer **`install`** if paths break or cluster-tasks is not always present.
 
 ## Status
 
-**v0.2.0** — wire, warm/up, local-gem, env layering (`config/shared.env` + vault `compose.secrets.yml`), cache.env, bootboot:nuke. Pin sibling checkout at tag **v0.2.0** or track `master`.
+**v0.3.0** — install (standalone bins), wire, warm/up, local-gem, env layering
+(`shared.env` + vault secrets), no package-cache ENV in compose (ubuntu-mise
+image owns `/cache`). Pin at tag **v0.3.0** or track `master`.
 
 ## License
 
