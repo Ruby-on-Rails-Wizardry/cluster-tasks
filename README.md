@@ -68,21 +68,34 @@ git remote add ami    git@ami:Ruby-on-Rails-Wizardry/cluster-tasks.git
 git push github && git push gitlab && git push ami
 ```
 
-## Wire into a cluster (sibling)
+## Install into a cluster (standalone — recommended)
+
+Copies all `bin/*` + `lib.sh` and vendors `task/cluster-tasks.yml`. **No runtime dependency** on a sibling `cluster-tasks` checkout.
 
 ```bash
-# Layout
+# Layout while installing (cluster-tasks only needed for the copy step)
 #   parent/cluster-tasks
-#   parent/docker-mise-cluster   # or work/
+#   parent/your-cluster/
 
-cd ../docker-mise-cluster
-../cluster-tasks/bin/wire --yes
+cd ../your-cluster
+../cluster-tasks/bin/install --yes
 task doctor
 task warm
 task up:all
 ```
 
-`wire` is **idempotent**: re-run after updating cluster-tasks to refresh wrappers and materialized in-container scripts (`docker-app`, `apps`, `local-gem-env`).
+Re-run **`install --yes`** after upgrading cluster-tasks to refresh the copies.
+
+## Wire into a cluster (sibling — live wrappers)
+
+Thin host wrappers `exec` `../cluster-tasks/bin/*`. Requires the sibling tree at runtime.
+
+```bash
+cd ../your-cluster
+../cluster-tasks/bin/wire --yes
+```
+
+Prefer **`install`** if paths break or cluster-tasks is not always present.
 
 ## Status
 

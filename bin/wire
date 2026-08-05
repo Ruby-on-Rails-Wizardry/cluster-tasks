@@ -1,22 +1,22 @@
 #!/usr/bin/env bash
-# Wire this cluster-tasks tree into a consumer cluster (sibling layout).
+# Wire or install cluster-tasks into a consumer cluster.
 #
-# Idempotent: safe to re-run. Creates/updates:
-#   - consumer bin/* wrappers (host tools) and materializes in-container scripts
-#   - Taskfile include block for sibling task/Taskfile.yml
-#   - strips consumer Taskfile tasks that already come from cluster-tasks
-#   - config/bundler-flags.yml BUNDLE_CLEAN=false (multi-app shared path)
-#   - .cluster-tasks.env  (CLUSTER_TASKS_ROOT for humans/shells)
+# ## wire (default) — sibling mode
+# Thin host wrappers exec ../cluster-tasks/bin/*; a few scripts are copied for /work.
+# Requires cluster-tasks present at runtime.
 #
-# Never writes or rewrites:
-#   - config/apps.yml     (consumer-owned app list)
-#   - compose.yml / nginx (topology)
+# ## install (--install / bin/install) — standalone mode
+# Copies all bins + lib.sh into the consumer and vendors the Taskfile under
+# task/cluster-tasks.yml. No runtime dependency on a sibling cluster-tasks tree.
+# Re-run install after upgrading cluster-tasks to refresh copies.
+#
+# Idempotent. Never writes config/apps.yml or compose.yml topology.
 #
 # Usage (from the consumer cluster root):
-#   ../cluster-tasks/bin/wire
 #   ../cluster-tasks/bin/wire --yes
-#   ../cluster-tasks/bin/wire /path/to/work
-#   ../cluster-tasks/bin/wire --check          # report only
+#   ../cluster-tasks/bin/install --yes
+#   ../cluster-tasks/bin/wire --install --yes
+#   ../cluster-tasks/bin/wire --check
 #
 # Env:
 #   CLUSTER_ROOT          consumer (default: cwd or first arg)
@@ -26,12 +26,15 @@ set -euo pipefail
 TOOLS_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 YES=0
 CHECK_ONLY=0
+MODE="wire" # wire | install
 CONSUMER=""
 
 for arg in "$@"; do
   case "$arg" in
     -y|--yes) YES=1 ;;
     --check) CHECK_ONLY=1 ;;
+    --install|--standalone) MODE="install" ;;
+    --wire) MODE="wire" ;;
     -h|--help)
       awk 'NR==1 { next } /^#/ { sub(/^# ?/, ""); print; next } { exit }' "$0"
       exit 0
@@ -46,7 +49,7 @@ for arg in "$@"; do
   esac
 done
 
-log() { printf 'wire: %s\n' "$*" >&2; }
+log() { printf '%s: %s\n' "${MODE}" "$*" >&2; }
 die() { log "error: $*"; exit 1; }
 
 if [[ -z "${CONSUMER}" ]]; then
@@ -60,14 +63,14 @@ CLUSTER_TASKS_ROOT="$(cd "${CLUSTER_TASKS_ROOT:-$TOOLS_ROOT}" && pwd)"
 [[ -x "${CLUSTER_TASKS_ROOT}/bin/wire" ]] || die "CLUSTER_TASKS_ROOT invalid: ${CLUSTER_TASKS_ROOT}"
 
 # Scripts that must be real files under the consumer (compose mounts only /work).
+# install mode copies these plus all host tools (full list below).
 MATERIALIZE=(
   docker-app
   local-gem-env
   apps
 )
 
-# Host-only tools: thin wrappers that exec sibling cluster-tasks.
-# lib.sh is sourced by wrappers via the sibling path, not copied.
+# Host-only tools: wire mode → thin wrappers; install mode → full copies.
 HOST_WRAP=(
   compose
   warm
@@ -80,14 +83,24 @@ HOST_WRAP=(
   ensure-bundle-config
   config
   wire
+  install
   nuke-bootboot
   local-gem
   env-files
 )
 
+# Full copy set for install mode (host + container + shared lib).
+INSTALL_COPY=(
+  lib.sh
+  mise-host-env.sh
+  "${MATERIALIZE[@]}"
+  "${HOST_WRAP[@]}"
+)
+
 MANAGED_BEGIN="# BEGIN cluster-tasks wire"
 MANAGED_END="# END cluster-tasks wire"
 WRAPPER_MARK="# Managed by cluster-tasks wire — do not edit by hand"
+INSTALL_MARK="# Managed by cluster-tasks install — standalone copy (no sibling required)"
 
 write_wrapper() {
   local name=$1
@@ -105,14 +118,13 @@ EOF
 
 materialize_script() {
   local name=$1
+  local mark=${2:-"${WRAPPER_MARK} (materialized for in-container /work/bin)"}
   local src="${CLUSTER_TASKS_ROOT}/bin/${name}"
   local dest="${CONSUMER}/bin/${name}"
   [[ -f "${src}" ]] || die "missing ${src}"
-  # Copy body; prepend managed mark if not present
   {
     echo "#!/usr/bin/env bash"
-    echo "${WRAPPER_MARK} (materialized for in-container /work/bin)"
-    # strip existing shebang from source
+    echo "${mark}"
     if head -1 "${src}" | grep -q '^#!'; then
       tail -n +2 "${src}"
     else
@@ -163,15 +175,17 @@ EOF
 # Rewrite Taskfile.yml to: header + version + optional custom env/tasks + managed include.
 # Removes consumer tasks whose names already exist in cluster-tasks (avoids flatten dupes).
 # Never touches config/apps.yml.
+# Args: optional path to library Taskfile (default: sibling cluster-tasks task/Taskfile.yml).
 ensure_taskfile_include() {
   local tf="${CONSUMER}/Taskfile.yml"
-  local lib_tf="${CLUSTER_TASKS_ROOT}/task/Taskfile.yml"
+  local lib_tf="${1:-${CLUSTER_TASKS_ROOT}/task/Taskfile.yml}"
   local rel
   rel=$(ruby -r pathname -e 'puts Pathname.new(ARGV[1]).relative_path_from(Pathname.new(ARGV[0]))' \
-    "${CONSUMER}" "${CLUSTER_TASKS_ROOT}/task/Taskfile.yml")
+    "${CONSUMER}" "${lib_tf}")
 
   CONSUMER_TF="${tf}" LIB_TF="${lib_tf}" REL_TF="${rel}" \
     BEGIN_MARK="${MANAGED_BEGIN}" END_MARK="${MANAGED_END}" \
+    MODE_NOTE="${MODE}" \
     ruby <<'RUBY'
 require "yaml"
 require "pathname"
@@ -277,14 +291,22 @@ doc = { "version" => version }
 doc["env"] = custom_env unless custom_env.empty?
 doc["tasks"] = custom_tasks unless custom_tasks.empty?
 
+mode_note = ENV.fetch("MODE_NOTE", "wire")
+include_comment =
+  if mode_note == "install"
+    "Vendored cluster-tasks Taskfile (standalone install — task/cluster-tasks.yml)"
+  else
+    "Sibling cluster-tasks Taskfile (see CLUSTER_TASKS_ROOT / ../cluster-tasks)"
+  end
+
 header = <<~H
-  # Host UX — includes sibling cluster-tasks (wired).
-  # App list lives in config/apps.yml — wire never overwrites it.
+  # Host UX — cluster-tasks (#{mode_note}).
+  # App list lives in config/apps.yml — wire/install never overwrites it.
 H
 yaml_body = YAML.dump(doc).sub(/\A---\n/, "")
 block = <<~B
   #{begin_m}
-  # Sibling cluster-tasks Taskfile (see CLUSTER_TASKS_ROOT / ../cluster-tasks)
+  # #{include_comment}
   includes:
     ct:
       taskfile: #{rel}
@@ -295,28 +317,51 @@ B
 tf_path.write(header + yaml_body + "\n" + block)
 
 if had_file
-  warn "wire: Taskfile.yml refreshed — stripped #{stripped.size} library task(s), kept #{custom_tasks.size} custom"
-  warn "wire:   removed: #{stripped.sort.join(', ')}" unless stripped.empty?
-  warn "wire:   kept: #{custom_tasks.keys.sort.join(', ')}" unless custom_tasks.empty?
+  warn "#{mode_note}: Taskfile.yml refreshed — stripped #{stripped.size} library task(s), kept #{custom_tasks.size} custom"
+  warn "#{mode_note}:   removed: #{stripped.sort.join(', ')}" unless stripped.empty?
+  warn "#{mode_note}:   kept: #{custom_tasks.keys.sort.join(', ')}" unless custom_tasks.empty?
 else
-  warn "wire: created thin Taskfile.yml with cluster-tasks include"
+  warn "#{mode_note}: created thin Taskfile.yml with cluster-tasks include"
 end
 RUBY
 }
 
 write_env_file() {
-  cat >"${CONSUMER}/.cluster-tasks.env" <<EOF
+  if [[ "${MODE}" == "install" ]]; then
+    cat >"${CONSUMER}/.cluster-tasks.env" <<EOF
+# Generated by cluster-tasks install — standalone (no sibling required)
+#   source .cluster-tasks.env
+export CLUSTER_ROOT="${CONSUMER}"
+# CLUSTER_TASKS_ROOT unset: bins live under ${CONSUMER}/bin
+export CLUSTER_TASKS_MODE=install
+EOF
+  else
+    cat >"${CONSUMER}/.cluster-tasks.env" <<EOF
 # Generated by cluster-tasks wire — source in your shell if useful
 #   source .cluster-tasks.env
 export CLUSTER_ROOT="${CONSUMER}"
 export CLUSTER_TASKS_ROOT="${CLUSTER_TASKS_ROOT}"
+export CLUSTER_TASKS_MODE=wire
 EOF
+  fi
   log "wrote ${CONSUMER}/.cluster-tasks.env"
 }
 
+vendor_taskfile() {
+  local dest="${CONSUMER}/task/cluster-tasks.yml"
+  local src="${CLUSTER_TASKS_ROOT}/task/Taskfile.yml"
+  mkdir -p "${CONSUMER}/task"
+  {
+    echo "# Vendored by cluster-tasks install — refresh with bin/install"
+    cat "${src}"
+  } >"${dest}"
+  log "vendored Taskfile → ${dest}"
+}
+
 report() {
+  log "mode:           ${MODE}"
   log "consumer:       ${CONSUMER}"
-  log "cluster-tasks:  ${CLUSTER_TASKS_ROOT}"
+  log "cluster-tasks:  ${CLUSTER_TASKS_ROOT} (source only${MODE:+ during ${MODE}})"
   log "apps.yml:       ${CONSUMER}/config/apps.yml (read-only — never overwritten)"
   log "apps:           $(CLUSTER_ROOT="${CONSUMER}" "${CLUSTER_TASKS_ROOT}/bin/apps" names-oneline 2>/dev/null || echo '?')"
 }
@@ -331,7 +376,13 @@ if [[ "${CHECK_ONLY}" -eq 1 ]]; then
 fi
 
 if [[ "${YES}" -ne 1 ]]; then
-  printf 'Wire cluster-tasks into\n  %s\nfrom\n  %s\n? [y/N] ' "${CONSUMER}" "${CLUSTER_TASKS_ROOT}"
+  if [[ "${MODE}" == "install" ]]; then
+    printf 'Install cluster-tasks STANDALONE into\n  %s\nfrom\n  %s\n(no sibling dependency after install)? [y/N] ' \
+      "${CONSUMER}" "${CLUSTER_TASKS_ROOT}"
+  else
+    printf 'Wire cluster-tasks (sibling wrappers) into\n  %s\nfrom\n  %s\n? [y/N] ' \
+      "${CONSUMER}" "${CLUSTER_TASKS_ROOT}"
+  fi
   read -r ans
   [[ "${ans}" == [yY] || "${ans}" == [yY][eE][sS] ]] || { log "aborted"; exit 0; }
 fi
@@ -339,27 +390,40 @@ fi
 report
 mkdir -p "${CONSUMER}/bin" "${CONSUMER}/config"
 
-log "materializing in-container scripts → ${CONSUMER}/bin/"
-for s in "${MATERIALIZE[@]}"; do
-  materialize_script "${s}"
-  log "  copy ${s}"
-done
+if [[ "${MODE}" == "install" ]]; then
+  log "installing full bin/* copies (standalone) → ${CONSUMER}/bin/"
+  for s in "${INSTALL_COPY[@]}"; do
+    [[ -f "${CLUSTER_TASKS_ROOT}/bin/${s}" ]] || continue
+    materialize_script "${s}" "${INSTALL_MARK}"
+    log "  copy ${s}"
+  done
+  vendor_taskfile
+  ensure_bundler_clean_false
+  ensure_taskfile_include "${CONSUMER}/task/cluster-tasks.yml"
+else
+  log "materializing in-container scripts → ${CONSUMER}/bin/"
+  for s in "${MATERIALIZE[@]}"; do
+    materialize_script "${s}"
+    log "  copy ${s}"
+  done
 
-log "writing host wrappers → ${CONSUMER}/bin/"
-for s in "${HOST_WRAP[@]}"; do
-  [[ -f "${CLUSTER_TASKS_ROOT}/bin/${s}" ]] || continue
-  write_wrapper "${s}"
-  log "  wrap ${s}"
-done
+  log "writing host wrappers → ${CONSUMER}/bin/"
+  for s in "${HOST_WRAP[@]}"; do
+    [[ -f "${CLUSTER_TASKS_ROOT}/bin/${s}" ]] || continue
+    write_wrapper "${s}"
+    log "  wrap ${s}"
+  done
 
-ensure_bundler_clean_false
-ensure_taskfile_include
+  ensure_bundler_clean_false
+  ensure_taskfile_include
+fi
+
 write_env_file
 
 # gitignore helpers
 if [[ -f "${CONSUMER}/.gitignore" ]]; then
   if ! grep -q '^\.cluster-tasks\.env$' "${CONSUMER}/.gitignore" 2>/dev/null; then
-    printf '\n# cluster-tasks wire\n.cluster-tasks.env\n' >>"${CONSUMER}/.gitignore"
+    printf '\n# cluster-tasks wire/install\n.cluster-tasks.env\n' >>"${CONSUMER}/.gitignore"
     log "appended .cluster-tasks.env to .gitignore"
   fi
   if ! grep -q '^\.local-gems\.disabled$' "${CONSUMER}/.gitignore" 2>/dev/null; then
@@ -382,16 +446,31 @@ if [[ -f "${CONSUMER}/.gitignore" ]]; then
 fi
 
 # Seed cache/shared env + secrets compose fragment (docs/ENV.md).
-CLUSTER_ROOT="${CONSUMER}" "${CLUSTER_TASKS_ROOT}/bin/env-files" write
+# Prefer consumer bin after install; else source tree.
+if [[ -x "${CONSUMER}/bin/env-files" ]] && ! head -5 "${CONSUMER}/bin/env-files" 2>/dev/null | grep -q 'exec "\${CLUSTER_TASKS_ROOT}'; then
+  CLUSTER_ROOT="${CONSUMER}" "${CONSUMER}/bin/env-files" write
+else
+  CLUSTER_ROOT="${CONSUMER}" "${CLUSTER_TASKS_ROOT}/bin/env-files" write
+fi
 
 log "running doctor…"
 export CLUSTER_ROOT="${CONSUMER}"
 export CLUSTER_TASKS_ROOT
 if [[ -x "${CONSUMER}/bin/doctor" ]]; then
+  # installed doctor should not require sibling
+  if [[ "${MODE}" == "install" ]]; then
+    unset CLUSTER_TASKS_ROOT || true
+  fi
   "${CONSUMER}/bin/doctor" || true
 else
   "${CLUSTER_TASKS_ROOT}/bin/doctor" || true
 fi
 
 log "done. From the cluster root:  task warm   /   task up:all"
-log "Re-run wire anytime to refresh wrappers from cluster-tasks."
+if [[ "${MODE}" == "install" ]]; then
+  log "Standalone: bins live under ${CONSUMER}/bin — sibling cluster-tasks not required at runtime."
+  log "Refresh after upgrading cluster-tasks:  ../cluster-tasks/bin/install --yes"
+else
+  log "Sibling mode: re-run wire after updating cluster-tasks to refresh wrappers."
+  log "For no sibling dependency:  ../cluster-tasks/bin/install --yes"
+fi

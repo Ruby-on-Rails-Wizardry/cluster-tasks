@@ -11,8 +11,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `docs/BUNDLE-LOCAL-GEMS.md` — Bundler-only: local directory override (`local.*` /
   `BUNDLE_LOCAL__*`) with no Gemfile change and no cluster tooling
+- **`bin/install`** / `wire --install` — standalone install: copy all bins + `lib.sh`,
+  vendor `task/cluster-tasks.yml`; **no runtime sibling** `cluster-tasks` dependency
+  (unlike wire wrappers that `exec` `CLUSTER_TASKS_ROOT`)
 
 ### Changed
+
+- Doctor accepts installed/vendored tooling without `../cluster-tasks`
+- README: prefer install for standalone consumers; wire for live sibling wrappers
 
 ### Fixed
 

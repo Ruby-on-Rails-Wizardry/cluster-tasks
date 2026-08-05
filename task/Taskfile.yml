@@ -39,7 +39,7 @@ tasks:
       - ./bin/doctor
 
   wire:
-    desc: "Wire sibling cluster-tasks into this project (task wire -- --yes)"
+    desc: "Wire sibling cluster-tasks (wrappers). Prefer: task install -- --yes for standalone"
     cmds:
       - |
         set -euo pipefail
@@ -52,6 +52,25 @@ tasks:
           exit 1
         fi
         "${ct}/bin/wire" {{.CLI_ARGS}} .
+
+  install:
+    desc: "Install cluster-tasks standalone into this project (task install -- --yes)"
+    cmds:
+      - |
+        set -euo pipefail
+        ct="${CLUSTER_TASKS_ROOT:-}"
+        if [[ -z "${ct}" ]]; then
+          ct="$(cd ../cluster-tasks 2>/dev/null && pwd)" || true
+        fi
+        if [[ -z "${ct}" || ! -x "${ct}/bin/install" ]]; then
+          if [[ -x ./bin/install ]]; then
+            ./bin/install {{.CLI_ARGS}} .
+            exit 0
+          fi
+          echo "error: set CLUSTER_TASKS_ROOT or clone cluster-tasks as ../cluster-tasks" >&2
+          exit 1
+        fi
+        "${ct}/bin/install" {{.CLI_ARGS}} .
 
   setup:
     desc: "Ensure image (optional) + warm cache (task setup -- --docker-build)"
