@@ -4,6 +4,26 @@
 
 The pin stays the source of truth for deploy and for the lockfile. Local override only affects processes where you enable it.
 
+## TL;DR
+
+Gem name `my_lib`, directory `/path/to/my_lib` (gem root with the `.gemspec`):
+
+```bash
+# On — config (writes app .bundle/config)
+bundle config set --local local.my_lib /path/to/my_lib
+
+# On — environment (this shell / process only)
+export BUNDLE_LOCAL__MY_LIB=/path/to/my_lib
+
+# Off — config
+bundle config unset --local local.my_lib
+
+# Off — environment
+unset BUNDLE_LOCAL__MY_LIB
+```
+
+Then `bundle install` (after on or off). Hyphenated gem names: `some-gem` → `local.some-gem` / `BUNDLE_LOCAL__SOME_GEM`.
+
 ---
 
 ## One idea
