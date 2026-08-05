@@ -54,6 +54,12 @@ Living checklist. Check items off in PRs; keep [PLAN.md](PLAN.md) for design nar
 - [ ] setup-remotes or doc snippet for triple remotes on this repo
 - [ ] Consider mise task aliases mirroring Taskfile
 
+## Morning follow-ups
+
+- [ ] **Compare live system `command:` with cluster `command:`**  
+      Side-by-side: real multi-app stack (e.g. `docker-mise/partial` / work “wf” compose — `app_startup`, image entrypoints, env_file order) vs **docker-mise-cluster** / **cluster-tasks** (`x-app` → `exec /work/bin/docker-app`, warm vs boot).  
+      Capture differences: process name, wait/db:prepare, path prefix, secrets env, health. Decide what to align or document.
+
 ## Open questions
 
 - [x] Layout: **siblings** (`cluster-tasks` beside the cluster) — not nested submodule
