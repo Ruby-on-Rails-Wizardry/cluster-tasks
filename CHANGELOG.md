@@ -19,6 +19,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - `bin/compose` uses `config/compose.env` (gitignored) instead of regenerating `.env`
+- `bin/db-reset` loads `config/compose.env` → `config/shared.env` → `.common.env`
+  (then optional user `.env` last); no longer depends on managing `.env`
 
 ### Fixed
 
