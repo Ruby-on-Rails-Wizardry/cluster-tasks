@@ -365,7 +365,14 @@ if [[ -f "${CONSUMER}/.gitignore" ]]; then
     printf '.local-gems.disabled\n' >>"${CONSUMER}/.gitignore"
     log "appended .local-gems.disabled to .gitignore"
   fi
+  if ! grep -q 'config/cache\.env' "${CONSUMER}/.gitignore" 2>/dev/null; then
+    printf 'config/cache.env\n' >>"${CONSUMER}/.gitignore"
+    log "appended config/cache.env to .gitignore"
+  fi
 fi
+
+# Seed config/cache.env so compose env_file works before first warm.
+CLUSTER_ROOT="${CONSUMER}" "${CLUSTER_TASKS_ROOT}/bin/cache-env" --write
 
 log "running doctor…"
 export CLUSTER_ROOT="${CONSUMER}"

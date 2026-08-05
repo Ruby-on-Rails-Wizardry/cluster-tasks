@@ -24,6 +24,7 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib.sh"
 
 ensure_image
 ensure_cache_volume
+write_cache_env_file "${ROOT}/config/cache.env"
 
 # Each app owns .bundle/config (bootboot writes here). Seed defaults if missing.
 "${ROOT}/bin/ensure-bundle-config"

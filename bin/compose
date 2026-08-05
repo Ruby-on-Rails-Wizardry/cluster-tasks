@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # docker compose wrapper for the multi-app cluster.
 # - Writes .env (IMAGE, POSTGRESQL_VERSION, TZ, …)
+# - Writes config/cache.env (BUNDLE_*/MISE_*/YARN_* for compose env_file)
 # - Ensures prebuilt ubuntu-mise:dev + shared cache volume
 # - Uses project compose.yml (Compose default discovery)
 #
@@ -25,6 +26,7 @@ docker compose version >/dev/null 2>&1 || die "docker compose plugin not availab
 
 ensure_image
 ensure_cache_volume
+write_cache_env_file "${ROOT}/config/cache.env"
 
 tz="$(host_timezone)"
 {

@@ -69,6 +69,11 @@ tasks:
     cmds:
       - ./bin/cache-ensure
 
+  cache:env:
+    desc: "Print or write cache env (task cache:env -- --write → config/cache.env)"
+    cmds:
+      - ./bin/cache-env {{.CLI_ARGS}}
+
   cache:reset:
     desc: "Delete shared /cache volume (task cache:reset -- -y)"
     cmds:

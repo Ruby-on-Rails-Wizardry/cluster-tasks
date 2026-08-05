@@ -41,6 +41,7 @@ shared_gems: []
 | Root `Gemfile` | Tooling only; warm may install it |
 | `shared_gems` + path checkouts | `bin/local-gem` / `local-gem-env` → `BUNDLE_LOCAL__*` ([LOCAL-GEMS.md](LOCAL-GEMS.md)) |
 | `config/bundler-flags.yml` | Seed for `ensure-bundle-config` |
+| `config/cache.env` | Generated (`bin/cache-env --write` / compose / warm) — compose `env_file` for `/cache` paths |
 | Per-app `Taskfile.yml` | `task <app> -- …` delegates into app tree |
 | `nginx/` | Front door; doctor may check `nginx/nginx.conf` if present |
 
