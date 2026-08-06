@@ -40,9 +40,10 @@ Do **not** nest `cluster-tasks` inside the cluster git tree (avoids submodule gi
 Day-to-day (from the **cluster** project root, once adopted):
 
 ```bash
-task warm
-task reheat                 # sequential docker-prepare per app (optional; no servers)
+task warm                   # cache fill + reheat (docker-prepare per app); WARM_REHEAT=0 to skip
+task reheat                 # sequential docker-prepare only (same IMAGE as bin/compose)
 task up:all                 # or: task up -- app1 app2
+# Private image: IMAGE=… in .mise.env.local (overrides .mise.env) or export IMAGE=
 task compose -- ps
 task db:reset -- app1
 ```

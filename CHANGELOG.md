@@ -15,6 +15,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Security
 
+## [0.5.0] - 2026-08-06
+
+### Added
+
+### Changed
+
+- **`bin/reheat` / `bin/warm`:** use Compose **service definitions** only (not bare
+  `docker run`). Reheat uses **`compose up`** with `PREPARE_ONLY=1` so Desktop
+  shows normal service names (`ross`), not `ross-run-*` one-offs; prepare then
+  exit (no server). Warm: cache fill via `dev`/first app service, then reheat.
+  Skip reheat after warm with `WARM_REHEAT=0`.
+- **`COMPOSE_PROJECT_NAME`:** `bin/compose -p …` so Desktop groups under one
+  project (env > compose `name:` > directory basename, e.g. `wf`).
+- **`IMAGE` load order:** shell > `.mise.env.local` > `.mise.env` > default
+- **`bin/docker-app`:** `PREPARE_ONLY=1` runs prepare and exits without server
+- **`bin/compose`:** `COMPOSE_ADD_FILES` for reheat overlay
+
+### Fixed
+
+### Security
+
 ## [0.4.1] - 2026-08-06
 
 ### Fixed
@@ -152,7 +173,8 @@ First installable release. Clone as a **sibling** of a multi-app cluster and run
 
 - Initial planning-only repository (no installable bins yet)
 
-[Unreleased]: https://github.com/Ruby-on-Rails-Wizardry/cluster-tasks/compare/v0.4.1...HEAD
+[Unreleased]: https://github.com/Ruby-on-Rails-Wizardry/cluster-tasks/compare/v0.5.0...HEAD
+[0.5.0]: https://github.com/Ruby-on-Rails-Wizardry/cluster-tasks/compare/v0.4.1...v0.5.0
 [0.4.1]: https://github.com/Ruby-on-Rails-Wizardry/cluster-tasks/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/Ruby-on-Rails-Wizardry/cluster-tasks/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/Ruby-on-Rails-Wizardry/cluster-tasks/compare/v0.2.0...v0.3.0
