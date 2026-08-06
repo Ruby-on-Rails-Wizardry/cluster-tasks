@@ -39,6 +39,7 @@ shared_gems: []
 | Path | Meaning |
 |------|---------|
 | Root `Gemfile` | Tooling only; warm may install it |
+| Optional `<app>/bin/after-docker-prepare` | App-specific hook after DB prepare (executable) |
 | `shared_gems` + path checkouts | `bin/local-gem` / `local-gem-env` → `BUNDLE_LOCAL__*` ([LOCAL-GEMS.md](LOCAL-GEMS.md)) |
 | `config/bundler-flags.yml` | Seed for `ensure-bundle-config` |
 | `config/shared.env` | Committed non-secret app env (see docs/ENV.md) |

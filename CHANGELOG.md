@@ -9,18 +9,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+### Changed
+
+### Fixed
+
+### Security
+
+## [0.4.0] - 2026-08-06
+
+### Added
+
 - **`WORK_MOUNT`** (alias **`WORKSPACE`**) — configurable project bind path in the
   container (default `/work`). Compose, warm, docker-app, db-reset honor it.
   Docs: [WORK-MOUNT.md](docs/WORK-MOUNT.md).
 - **`.common.env`** — default shared-secrets file (vault); `config/shared.env` for
   non-secrets only. Compose interpolation writes **`config/compose.env`** and
   **does not overwrite `.env`**.
+- **`bin/docker-prepare`** — prepare-only path (mise, bundle, yarn, wait Postgres,
+  `db:prepare` + `db:migrate`, optional **`bin/after-docker-prepare`** hook in the
+  app). Exits without starting the server. Materialized for containers via wire/install.
+- **`bin/reheat`** / `task reheat` — run `docker-prepare` for each app **in sequence**
+  via `compose run` (avoids shared `/cache` lock fights). Optional app name args.
+- **`bin/docker-app`** — calls `docker-prepare`, then `exec` rails server (or
+  **foreman** when a Procfile is present and foreman is on PATH)
 
 ### Changed
 
 - `bin/compose` uses `config/compose.env` (gitignored) instead of regenerating `.env`
 - `bin/db-reset` loads `config/compose.env` → `config/shared.env` → `.common.env`
   (then optional user `.env` last); no longer depends on managing `.env`
+- **Stop re-injecting package-cache ENV:** `bin/warm`, `bin/docker-app`,
+  `bin/cache-env`, `bin/nuke-bootboot`, and `bin/db-reset` no longer export
+  `BUNDLE_*` / `YARN_*` / `MISE_*` / … — ubuntu-mise image ENV + user configs
+  own the `/cache` layout (see ubuntu-mise `docs/runtime-env-not-required.*`).
+  `cache-env` is diagnostic / yarnrc / stub-write only. `warm` passes
+  `MISE_TRUSTED_CONFIG_PATHS` only when `WORK_MOUNT` is not `/work`.
 
 ### Fixed
 
@@ -117,3 +140,9 @@ First installable release. Clone as a **sibling** of a multi-app cluster and run
 ### Added
 
 - Initial planning-only repository (no installable bins yet)
+
+[Unreleased]: https://github.com/Ruby-on-Rails-Wizardry/cluster-tasks/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/Ruby-on-Rails-Wizardry/cluster-tasks/compare/v0.3.0...v0.4.0
+[0.3.0]: https://github.com/Ruby-on-Rails-Wizardry/cluster-tasks/compare/v0.2.0...v0.3.0
+[0.2.0]: https://github.com/Ruby-on-Rails-Wizardry/cluster-tasks/compare/v0.1.0...v0.2.0
+[0.1.0]: https://github.com/Ruby-on-Rails-Wizardry/cluster-tasks/releases/tag/v0.1.0

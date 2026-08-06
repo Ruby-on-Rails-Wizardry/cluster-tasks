@@ -41,10 +41,14 @@ Day-to-day (from the **cluster** project root, once adopted):
 
 ```bash
 task warm
+task reheat                 # sequential docker-prepare per app (optional; no servers)
 task up:all                 # or: task up -- app1 app2
 task compose -- ps
 task db:reset -- app1
 ```
+
+Compose app command runs **`bin/docker-app`** → **`docker-prepare`** then server.  
+Optional per-app hook: **`<app>/bin/after-docker-prepare`** (executable).
 
 ## Documentation
 
@@ -101,7 +105,7 @@ Prefer **`install`** if paths break or cluster-tasks is not always present.
 
 **v0.3.0** — install (standalone bins), wire, warm/up, local-gem, env layering
 (`shared.env` + vault secrets), no package-cache ENV in compose (ubuntu-mise
-image owns `/cache`). Pin at tag **v0.3.0** or track `master`.
+image owns `/cache`). Pin at tag **v0.4.0** or track `master`.
 
 ## License
 

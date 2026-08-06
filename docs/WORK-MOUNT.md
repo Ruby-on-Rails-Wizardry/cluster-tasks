@@ -31,10 +31,13 @@ WORK_MOUNT=/app
 |-------|------|
 | Compose volume target | `${WORK_MOUNT:-/work}` |
 | Compose `working_dir` | `${WORK_MOUNT:-/work}` or `…/fred` |
-| Container env | `WORK_MOUNT` / `WORKSPACE` |
+| Container env | `WORK_MOUNT` / `WORKSPACE` (topology only) |
 | `bin/docker-app` | resolves cluster root from `WORK_MOUNT` |
-| `bin/warm` | mounts and crawls `WORK_MOUNT` |
-| mise trust | `MISE_TRUSTED_CONFIG_PATHS` should include the mount (image defaults to `/work`; override when you change mount) |
+| `bin/warm` | mounts and crawls `WORK_MOUNT`; passes `MISE_TRUSTED_CONFIG_PATHS` only when mount ≠ `/work` |
+| mise trust | image defaults to `/work`; non-default mount needs `MISE_TRUSTED_CONFIG_PATHS` to match |
+
+Do **not** re-list package-cache vars (`BUNDLE_*`, `YARN_*`, `MISE_DATA_DIR`, …) —
+ubuntu-mise owns those (see [ENV.md](ENV.md)).
 
 ## Example compose (cluster)
 
@@ -44,6 +47,8 @@ x-app: &app
   environment:
     WORK_MOUNT: ${WORK_MOUNT:-/work}
     WORKSPACE: ${WORK_MOUNT:-/work}
+    # Only if WORK_MOUNT is not /work:
+    # MISE_TRUSTED_CONFIG_PATHS: ${WORK_MOUNT}
   volumes:
     - .:${WORK_MOUNT:-/work}:cached
     - cache:/cache
