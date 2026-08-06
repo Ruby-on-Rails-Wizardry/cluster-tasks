@@ -15,6 +15,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Security
 
+## [0.4.1] - 2026-08-06
+
+### Fixed
+
+- **`bin/docker-prepare`:** use app-scoped DB URLs (`FRED_DATABASE_URL`,
+  `ROSS_DATABASE_URL`, `PRIMARY_DATABASE_URL`, …) for Postgres **wait/logging
+  only** when `DATABASE_URL` is unset — does **not** set/export `DATABASE_URL`
+  (apps own that themselves)
+
+### Security
+
 ## [0.4.0] - 2026-08-06
 
 ### Added
@@ -141,7 +152,8 @@ First installable release. Clone as a **sibling** of a multi-app cluster and run
 
 - Initial planning-only repository (no installable bins yet)
 
-[Unreleased]: https://github.com/Ruby-on-Rails-Wizardry/cluster-tasks/compare/v0.4.0...HEAD
+[Unreleased]: https://github.com/Ruby-on-Rails-Wizardry/cluster-tasks/compare/v0.4.1...HEAD
+[0.4.1]: https://github.com/Ruby-on-Rails-Wizardry/cluster-tasks/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/Ruby-on-Rails-Wizardry/cluster-tasks/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/Ruby-on-Rails-Wizardry/cluster-tasks/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/Ruby-on-Rails-Wizardry/cluster-tasks/compare/v0.1.0...v0.2.0
